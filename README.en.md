@@ -61,6 +61,31 @@ shortcuts.
 
 ---
 
+<!-- SCREENSHOTS: this block is commented out until real images exist.
+     How to capture and upload: docs/adding-screenshots.md
+     Once the files are in docs/images/, remove the opening comment line
+     along with the closing line.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/desktop.png" alt="GNOME desktop with the Catppuccin theme" width="760">
+  <br><em>GNOME desktop — Catppuccin Macchiato + Mauve</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/overview.png" alt="GNOME overview / Activities" width="370">
+  <img src="docs/images/apps.png" alt="VS Code and Chrome running in the CRD session" width="370">
+  <br><em>Overview (animations enabled) and pre-installed apps</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/safe-upgrade.png" alt="Running sudo safe-upgrade" width="500">
+  <br><em><code>sudo safe-upgrade</code> — upgrade without dropping the session</em>
+</p>
+
+-->
+
 ## Requirements
 
 - A **GitHub** account (free). Public repos get unlimited Actions minutes.
@@ -183,7 +208,8 @@ and enter the PIN.
 | `Cannot access KVM` | KVM is available on x86 runners. Check `ls -l /dev/kvm`; if it exists but still fails, open an issue with the run log. |
 
 Full guide: [`docs/troubleshooting.md`](docs/troubleshooting.md) ·
-FAQ: [`docs/faq.md`](docs/faq.md)
+FAQ: [`docs/faq.md`](docs/faq.md) ·
+How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.md)
 
 ---
 
@@ -201,6 +227,7 @@ FAQ: [`docs/faq.md`](docs/faq.md)
 │   └── safe-upgrade.sh          # session-safe upgrade helper
 ├── docs/
 │   ├── images/banner.svg
+│   ├── adding-screenshots.md
 │   ├── troubleshooting.md
 │   └── faq.md
 ├── .yamllint.yml                # YAML linter configuration

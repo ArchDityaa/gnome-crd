@@ -14,11 +14,14 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 - `.yamllint.yml` — konfigurasi linter YAML (batas panjang baris dimatikan karena
   workflow berisi perintah shell yang panjang).
 - `docs/images/banner.svg` — banner untuk README.
+- `docs/adding-screenshots.md` — panduan mengambil screenshot dari sesi CRD dan
+  memasukkannya ke repo (3 cara, termasuk drag & drop lewat Chrome di dalam sesi).
 
 ### Changed
 
 - README (ID & EN): banner, badge (status CI Lint, lisensi, runner, desktop,
-  PRs welcome), diagram alur Mermaid, dan bagian Kontribusi.
+  PRs welcome), diagram alur Mermaid, bagian Kontribusi, dan slot galeri
+  screenshot (dikomentari sampai gambar asli tersedia).
 
 ## [1.0.0] - 2026-10-18
 

@@ -60,6 +60,31 @@ dihidupkan pada software rendering, wallpaper Catppuccin, dan shortcut di Deskto
 
 ---
 
+<!-- SCREENSHOTS: blok ini sengaja dikomentari sampai gambar asli tersedia.
+     Cara mengambil dan mengunggah gambar: docs/adding-screenshots.md
+     Setelah file tersedia di docs/images/, hapus baris pembuka komentar ini
+     beserta baris penutupnya.
+
+## Tangkapan layar
+
+<p align="center">
+  <img src="docs/images/desktop.png" alt="Desktop GNOME dengan tema Catppuccin" width="760">
+  <br><em>Desktop GNOME — Catppuccin Macchiato + Mauve</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/overview.png" alt="GNOME overview / Activities" width="370">
+  <img src="docs/images/apps.png" alt="VS Code dan Chrome berjalan di sesi CRD" width="370">
+  <br><em>Overview (animasi aktif) dan aplikasi yang sudah terpasang</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/safe-upgrade.png" alt="Menjalankan sudo safe-upgrade" width="500">
+  <br><em><code>sudo safe-upgrade</code> — upgrade tanpa memutus sesi</em>
+</p>
+
+-->
+
 ## Persyaratan
 
 - Akun **GitHub** (gratis). Runner publik = menit Actions tidak terbatas.
@@ -183,7 +208,8 @@ lalu masukkan PIN.
 | `Cannot access KVM` | KVM tersedia di runner x86. Cek `ls -l /dev/kvm`; jika ada tapi tetap gagal, tulis issue dengan log run. |
 
 Panduan lengkap: [`docs/troubleshooting.md`](docs/troubleshooting.md) ·
-Pertanyaan umum: [`docs/faq.md`](docs/faq.md)
+Pertanyaan umum: [`docs/faq.md`](docs/faq.md) ·
+Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots.md)
 
 ---
 
@@ -201,6 +227,7 @@ Pertanyaan umum: [`docs/faq.md`](docs/faq.md)
 │   └── safe-upgrade.sh          # helper anti-putus-sesi
 ├── docs/
 │   ├── images/banner.svg
+│   ├── adding-screenshots.md
 │   ├── troubleshooting.md
 │   └── faq.md
 ├── .yamllint.yml                # konfigurasi linter YAML
