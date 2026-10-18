@@ -1,0 +1,64 @@
+name: Lint
+
+# Validasi otomatis kualitas repo. Dijalankan pada push ke main, setiap
+# pull request, dan bisa dipicu manual dari tab Actions.
+#
+#   actionlint  -> struktur workflow GitHub Actions (ekspresi `${{ }}`,
+#                  `needs`, `runs-on`, plus shellcheck untuk blok `run:`)
+#   yamllint    -> sintaks & indentasi semua file YAML (termasuk .github/)
+#   shellcheck  -> seluruh skrip di scripts/
+#
+# Tidak ada dependency pihak ketiga yang dipakai sebagai action: semua
+# linter dipasang dari repositori Ubuntu resmi, kecuali actionlint yang
+# diunduh dari rilis resmi dan diverifikasi checksum-nya.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ACTIONLINT_VERSION: "1.7.12"
+  ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+
+jobs:
+  lint:
+    name: YAML + workflow + shell
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck + yamllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck yamllint
+
+      - name: Install actionlint (checksum diverifikasi)
+        run: |
+          set -euo pipefail
+          url="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o /tmp/actionlint.tar.gz "$url"
+          echo "${ACTIONLINT_SHA256}  /tmp/actionlint.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
+          actionlint --version
+
+      # Ignore yang disengaja (bukan error nyata):
+      #   SC2016 - escaping ANSI (`\033`) di dalam kutip tunggal memang disengaja
+      #   SC2034 - variabel warna (mis. C_RED) tidak dipakai di setiap step
+      #   SC2012 - `ls` pada step verifikasi, hanya untuk menampilkan info
+      - name: actionlint
+        run: actionlint -color -ignore SC2016 -ignore SC2034 -ignore SC2012
+
+      - name: yamllint
+        run: yamllint -f parsable .
+
+      - name: shellcheck
+        run: shellcheck scripts/*.sh

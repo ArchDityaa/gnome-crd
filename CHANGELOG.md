@@ -3,6 +3,23 @@
 Semua perubahan penting pada repo ini didokumentasikan di sini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `.github/workflows/lint.yml` — CI yang memvalidasi seluruh file YAML
+  (`yamllint`), workflow GitHub Actions (`actionlint`, binary diunduh dari rilis
+  resmi dengan verifikasi checksum), dan skrip shell (`shellcheck`). Berjalan
+  pada setiap push ke `main` dan setiap pull request.
+- `.yamllint.yml` — konfigurasi linter YAML (batas panjang baris dimatikan karena
+  workflow berisi perintah shell yang panjang).
+- `docs/images/banner.svg` — banner untuk README.
+
+### Changed
+
+- README (ID & EN): banner, badge (status CI Lint, lisensi, runner, desktop,
+  PRs welcome), diagram alur Mermaid, dan bagian Kontribusi.
+
 ## [1.0.0] - 2026-10-18
 
 Rilis awal repo yang bisa langsung di-fork dan dijalankan.

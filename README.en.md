@@ -1,9 +1,20 @@
-# RICH LINUX — GNOME + Chrome Remote Desktop
+<p align="center">
+  <img src="docs/images/banner.svg" alt="RICH LINUX — GNOME + Chrome Remote Desktop" width="900">
+</p>
 
-[Versi Bahasa Indonesia →](README.md)
+<p align="center">
+  <a href="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml"><img src="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
+  <a href="https://github.com/ArchDityaa/gnome-crd/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/runner-ubuntu--24.04-E95420.svg" alt="Runner: ubuntu-24.04">
+  <img src="https://img.shields.io/badge/session-max%206h-orange.svg" alt="Session: max 6h">
+  <img src="https://img.shields.io/badge/desktop-GNOME-4A86CF.svg" alt="Desktop: GNOME">
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome">
+</p>
 
 Run a **full GNOME desktop** in the cloud, for free, just by **forking this repo**.
 Connect from your browser via Chrome Remote Desktop — nothing to install locally.
+
+[Versi Bahasa Indonesia →](README.md)
 
 Good for:
 
@@ -12,10 +23,18 @@ Good for:
 - Trying Linux applications in a clean, disposable environment
 - Learning the terminal and Linux without risking your own machine
 
-![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Runner: ubuntu-24.04](https://img.shields.io/badge/runner-ubuntu--24.04-E95420)
-![Session: max 6h](https://img.shields.io/badge/session-max%206h-orange)
-![Desktop: GNOME](https://img.shields.io/badge/desktop-GNOME-4A86CF)
+## At a glance
+
+```mermaid
+flowchart LR
+  A[Fork repo] --> B[Enable Actions]
+  B --> C[Get CRD command<br/>remotedesktop.google.com/headless]
+  C --> D[Run workflow<br/>paste command + PIN]
+  D --> E[ubuntu-24.04 runner<br/>installs GNOME, Chrome, VS Code, theme]
+  E --> F[Device 'gnome' appears]
+  F --> G[Connect from browser<br/>remotedesktop.google.com/access]
+  G --> H[GNOME desktop<br/>up to 6 hours]
+```
 
 ---
 
@@ -173,18 +192,40 @@ FAQ: [`docs/faq.md`](docs/faq.md)
 ```
 .
 ├── .github/
-│   ├── workflows/gnome.yml      # the main workflow you run
+│   ├── workflows/
+│   │   ├── gnome.yml            # the main workflow you run
+│   │   └── lint.yml             # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml
 ├── scripts/
 │   └── safe-upgrade.sh          # session-safe upgrade helper
 ├── docs/
+│   ├── images/banner.svg
 │   ├── troubleshooting.md
 │   └── faq.md
+├── .yamllint.yml                # YAML linter configuration
 ├── README.md                    # Indonesian
 ├── README.en.md                 # this file
 ├── CHANGELOG.md
 └── LICENSE
+```
+
+---
+
+## Contributing
+
+Pull requests are very welcome. All YAML, workflows and shell scripts are
+validated automatically by the **Lint** CI on every push to `main` and every
+pull request.
+
+Run the same linters locally before pushing:
+
+```bash
+pip install yamllint
+yamllint .
+shellcheck scripts/*.sh
+# actionlint: https://github.com/rhysd/actionlint
+actionlint -ignore SC2016 -ignore SC2034 -ignore SC2012
 ```
 
 ---

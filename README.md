@@ -1,9 +1,20 @@
-# RICH LINUX — GNOME + Chrome Remote Desktop
+<p align="center">
+  <img src="docs/images/banner.svg" alt="RICH LINUX — GNOME + Chrome Remote Desktop" width="900">
+</p>
 
-[English version →](README.en.md)
+<p align="center">
+  <a href="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml"><img src="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
+  <a href="https://github.com/ArchDityaa/gnome-crd/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/runner-ubuntu--24.04-E95420.svg" alt="Runner: ubuntu-24.04">
+  <img src="https://img.shields.io/badge/session-maks%206%20jam-orange.svg" alt="Session: maks 6 jam">
+  <img src="https://img.shields.io/badge/desktop-GNOME-4A86CF.svg" alt="Desktop: GNOME">
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome">
+</p>
 
 Jalankan **desktop GNOME lengkap** di cloud, gratis, hanya dengan **fork repo ini**.
 Akses dari browser lewat Chrome Remote Desktop — tanpa install apa pun di komputer Anda.
+
+[English version →](README.en.md)
 
 Cocok untuk:
 
@@ -12,10 +23,18 @@ Cocok untuk:
 - Uji coba aplikasi Linux di lingkungan bersih, sekali pakai
 - Belajar terminal & Linux tanpa mengorbankan mesin sendiri
 
-![License: MIT](https://img.shields.io/badge/license-MIT-blue)
-![Runner: ubuntu-24.04](https://img.shields.io/badge/runner-ubuntu--24.04-E95420)
-![Session: max 6h](https://img.shields.io/badge/session-maks%206%20jam-orange)
-![Desktop: GNOME](https://img.shields.io/badge/desktop-GNOME-4A86CF)
+## Alur singkat
+
+```mermaid
+flowchart LR
+  A[Fork repo] --> B[Aktifkan Actions]
+  B --> C[Ambil perintah CRD<br/>remotedesktop.google.com/headless]
+  C --> D[Run workflow<br/>paste perintah + PIN]
+  D --> E[Runner ubuntu-24.04<br/>pasang GNOME, Chrome, VS Code, theme]
+  E --> F[Device 'gnome' muncul]
+  F --> G[Connect dari browser<br/>remotedesktop.google.com/access]
+  G --> H[Desktop GNOME<br/>maksimum 6 jam]
+```
 
 ---
 
@@ -173,18 +192,39 @@ Pertanyaan umum: [`docs/faq.md`](docs/faq.md)
 ```
 .
 ├── .github/
-│   ├── workflows/gnome.yml      # workflow utama (yang Anda jalankan)
+│   ├── workflows/
+│   │   ├── gnome.yml            # workflow utama (yang Anda jalankan)
+│   │   └── lint.yml             # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml
 ├── scripts/
 │   └── safe-upgrade.sh          # helper anti-putus-sesi
 ├── docs/
+│   ├── images/banner.svg
 │   ├── troubleshooting.md
 │   └── faq.md
+├── .yamllint.yml                # konfigurasi linter YAML
 ├── README.md                    # dokumen ini (ID)
 ├── README.en.md                 # English
 ├── CHANGELOG.md
 └── LICENSE
+```
+
+---
+
+## Kontribusi
+
+Pull request sangat diterima. Semua YAML, workflow, dan skrip divalidasi otomatis
+oleh CI **Lint** pada setiap push ke `main` dan setiap pull request.
+
+Jalankan linter yang sama secara lokal sebelum push:
+
+```bash
+pip install yamllint
+yamllint .
+shellcheck scripts/*.sh
+# actionlint: https://github.com/rhysd/actionlint
+actionlint -ignore SC2016 -ignore SC2034 -ignore SC2012
 ```
 
 ---
