@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # Jaga action resmi tetap terbaru (checkout, cache/restore, cache/save, dll).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"

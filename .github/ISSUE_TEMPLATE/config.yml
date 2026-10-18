@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Diskusi GitHub Actions
+    url: https://github.com/orgs/community/discussions/categories/actions
+    about: Baca README.md dan docs/troubleshooting.md dulu; untuk hal umum soal GitHub Actions, gunakan diskusi komunitas.

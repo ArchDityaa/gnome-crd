@@ -1,0 +1,70 @@
+name: Bug report
+description: Laporkan masalah pada workflow RICH LINUX (GNOME + CRD)
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Terima kasih sudah melapor. **Jangan pernah paste** isi
+        `crd_host_command`, kode OAuth (`--code=...`), atau PIN Anda.
+        Cukup tempelkan potongan LOG yang relevan.
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Di mana masalahnya?
+      options:
+        - Workflow gagal saat build/install
+        - Workflow gagal saat register Chrome Remote Desktop
+        - Sudah "READY" tapi tidak bisa connect
+        - Desktop/sesi bermasalah setelah connect (tema, resolusi, dsb.)
+        - Lainnya
+    validations:
+      required: true
+
+  - type: input
+    id: step
+    attributes:
+      label: Nama step yang gagal (jika workflow gagal)
+      placeholder: "Contoh: Register Chrome Remote Desktop"
+    validations:
+      required: false
+
+  - type: textarea
+    id: what
+    attributes:
+      label: Apa yang terjadi?
+      description: Jelaskan singkat masalah dan apa yang Anda harapkan.
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Potongan log
+      description: |
+        Tempelkan bagian log yang relevan (tanpa data sensitif).
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: runurl
+    attributes:
+      label: URL run (opsional)
+      placeholder: "https://github.com/<user>/<repo>/actions/runs/<id>"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: Saya sudah mengaktifkan Actions di fork (Settings → Actions → Allow all actions).
+          required: false
+        - label: Saya sudah mencoba Re-run workflow dengan perintah CRD yang baru.
+          required: false
+        - label: Saya tidak menyertakan kode OAuth / PIN di laporan ini.
+          required: true
