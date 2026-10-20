@@ -613,7 +613,7 @@ jobs:
           echo -e "${C_YELLOW}[INFO] Membuat wrapper gnome-session -> --session=ubuntu...${C_NC}"
           sudo tee /usr/local/bin/gnome-session > /dev/null <<'WRAP'
           #!/bin/sh
-          exec /usr/bin/gnome-session --session=ubuntu "$@"
+          exec /usr/bin/gnome-session --session=ubuntu --disable-acceleration-check "$@"
           WRAP
           sudo chmod 0755 /usr/local/bin/gnome-session
 
