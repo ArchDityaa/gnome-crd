@@ -56,6 +56,10 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   `|`, `>`, `<`, `\`, newline, dan karakter kontrol).
 - **Cleanup tunnel/server deterministik**: SIGTERM, tunggu, lalu SIGKILL bila
   proses tidak berhenti.
+- **Prepare System tidak lagi menunggu snap store**: `snapd` + paket transisi
+  `firefox`/`thunderbird` dihapus dan di-hold sebelum `apt-get upgrade` di
+  `gnome.yml` dan `gnome26.yml`, sehingga upgrade tidak memicu
+  “Installing the firefox snap”.
 
 ## [1.0.0] - 2026-10-18
 

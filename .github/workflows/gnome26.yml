@@ -170,6 +170,17 @@ jobs:
 
           sudo apt-get autoremove -y || true
 
+          # Hapus snapd + paket transisi snap SEBELUM upgrade. Image runner
+          # Ubuntu membawa firefox/snapd; upgrade paket transisi firefox bisa
+          # memicu "Installing the firefox snap" dan menunggu snap store lama.
+          # Hold mencegah paket ini ikut terpasang lagi oleh apt berikutnya.
+          echo -e "${C_YELLOW}[INFO] Removing snapd + snap transitional packages before upgrade...${C_NC}"
+          sudo systemctl stop snapd.service snapd.socket 2>/dev/null || true
+          sudo apt-get purge -y snapd thunderbird firefox || true
+          sudo apt-mark hold snapd thunderbird firefox
+          sudo rm -rf /snap /var/snap /var/lib/snapd /root/snap /home/runner/snap 2>/dev/null || true
+          command -v snap >/dev/null 2>&1 && echo -e "${C_YELLOW}[WARN] snap masih ada sebelum upgrade.${C_NC}" || echo -e "${C_GREEN}[OK] snapd dihapus sebelum upgrade.${C_NC}"
+
           # Full upgrade di BUILD-TIME (aman, sebelum CRD/session jalan).
           # Jangan `apt upgrade` manual dari dalam sesi CRD — itu me-restart
           # chrome-remote-desktop/gnome-shell/systemd dan memutus sesi.
