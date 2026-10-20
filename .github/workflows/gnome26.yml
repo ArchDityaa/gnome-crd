@@ -132,7 +132,7 @@ jobs:
           # Matikan apt hook needrestart SEBELUM operasi apt apa pun, supaya
           # setiap install/upgrade tidak menampilkan 'Scanning processes...'
           # dan tidak mencoba me-restart service (yang bisa memutus sesi CRD).
-          # Di Ubuntu 24.04 hook asli needrestart ada di 99needrestart
+          # Di Ubuntu 24.04/26.04 hook asli needrestart ada di 99needrestart
           # (memanggil /usr/lib/needrestart/apt-pinvoke), bukan 20needrestart
           # (nama legacy 22.04). Hapus keduanya supaya tidak ada banner
           # "Scanning processes..." setelah setiap apt install/upgrade,
