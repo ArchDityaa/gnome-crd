@@ -39,7 +39,7 @@ jobs:
     steps:
 
       - name: Checkout repository (for scripts/safe-upgrade.sh)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - id: dated
         run: echo "today=$(date +'%Y%m%d')" >> "$GITHUB_OUTPUT"
