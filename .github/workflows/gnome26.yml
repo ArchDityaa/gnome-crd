@@ -40,7 +40,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
 
     steps:
@@ -248,8 +248,8 @@ jobs:
             xorg \
             adwaita-icon-theme \
             fonts-cantarell \
-            qemu-system-x86 \
-            qemu-utils \
+            xclip \
+            neofetch \
             libvirt-daemon-system \
             libvirt-clients \
             virtinst \
