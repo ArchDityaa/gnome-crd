@@ -1,10 +1,11 @@
 # Troubleshooting
 
 Panduan lengkap untuk masalah yang paling sering muncul saat menjalankan
-**RICH LINUX (GNOME + Chrome Remote Desktop)**.
+**GNOME 26 (GNOME + Chrome Remote Desktop)**.
 
-> **Jangan pernah paste** isi `crd_host_command`, kode OAuth (`--code=...`),
-> atau PIN Anda ke issue/log publik.
+> **Jangan pernah paste** URL form (mengandung token), isi `crd_host_command`,
+> kode OAuth (`--code=...`), atau PIN Anda ke issue/log publik. Cukup potongan
+> log yang relevan.
 
 ---
 
@@ -24,38 +25,80 @@ workflows → Save**. Lalu refresh tab Actions; workflow akan muncul.
 
 ---
 
-## 2. Gagal di step *Register Chrome Remote Desktop*
+## 2. URL form otorisasi tidak muncul / error Cloudflare
 
-**Gejala:** log berakhir dengan:
+**Gejala:**
 
-```
-[FAIL] Registrasi Chrome Remote Desktop gagal (OAuth error).
-```
+- Instalasi sudah lama, tetapi log belum menampilkan `[OK] FORM OTORISASI SIAP`.
+- URL form sudah muncul, tetapi halaman menampilkan **Cloudflare 1033/502**.
 
-**Penyebab tersering:** kode `--code=...` bersifat **sekali pakai** dan cepat
-kadaluarsa (biasanya beberapa menit). Kalau Anda menunggu lama sebelum run,
-atau re-run dengan perintah lama, registrasi akan gagal.
+**Penyebab & solusi:**
 
-**Solusi (tanpa install ulang):**
+1. **Instalasi belum selesai.** Form baru dibuat setelah desktop siap
+   (±20–40 menit). Tunggu step **Authorize & Register Chrome Remote Desktop
+   (Web UI)** mulai berjalan.
+2. **Tunnel sedang warm-up.** Cloudflare quick tunnel kadang butuh ±15 detik
+   sebelum URL bisa dibuka. Tunggu lalu refresh.
+3. **Cloudflare gagal dibuat.** Cari log:
 
-1. Buka <https://remotedesktop.google.com/headless>.
-2. **Begin → Next → Authorize** sampai muncul perintah **Debian Linux** yang baru.
-3. Copy **seluruh** perintah baru tersebut.
-4. Di tab Actions, buka run yang gagal → **Re-run all jobs** → paste perintah
-   baru di kolom `crd_host_command`.
+   ```
+   [FAIL] Cloudflare quick tunnel tidak bisa dibuat.
+   ```
 
-Karena cache `.deb` sudah tersimpan (step **Save apt package cache**), re-run jauh
-lebih cepat daripada run pertama.
+   Workflow akan mencoba QUIC lalu HTTP/2. Kalau keduanya gagal:
+   - jalankan ulang workflow (cache `.deb` dipakai lagi), atau
+   - isi `crd_host_command` saat dispatch sebagai fallback. **Perhatian:** kode
+     fallback dibuat di awal run dan bisa kedaluwarsa selama instalasi; ini
+     hanya berguna kalau instalasi sudah hangat/cache.
+4. **Tunnel mati di tengah jalan.** Workflow mencoba restart hingga 3 kali.
+   URL publik akan **berubah**; URL baru dicetak di log dan Job Summary. Token
+   tetap sama, tetapi URL lama tidak bisa dipakai lagi.
+5. **Window 30 menit habis.** Workflow berhenti dan meninggalkan status
+   `timeout`. Jalankan ulang workflow; cache membuat re-run lebih cepat.
 
-**Penyebab lain:**
-
-- Perintah yang di-paste terpotong. Pastikan seluruh baris ikut ter-copy
-  (termasuk `DISPLAY= ... --name=$(hostname)`).
-- Anda meng-copy perintah **Windows/macOS** alih-alih **Debian Linux**.
+> URL form hanya berlaku ±30 menit. Jangan menutup tab form sebelum registrasi
+> selesai; kalau tab tertutup, buka lagi URL yang sama selama window masih ada.
 
 ---
 
-## 3. Workflow "READY" tapi device tidak muncul di Remote Access
+## 3. Registrasi CRD gagal / kode auth bermasalah
+
+**Gejala:** form menampilkan status **Gagal**, atau log berakhir dengan:
+
+```
+[FAIL] Registrasi Chrome Remote Desktop gagal.
+```
+
+**Penyebab tersering:** kode `--code=...` bersifat **sekali pakai** dan cepat
+kadaluarsa. Bisa juga karena:
+
+- Anda login akun Google yang berbeda dengan yang dipakai di halaman headless.
+- Perintah yang di-paste terpotong.
+- Anda meng-copy perintah **Windows/macOS**, bukan **Debian Linux**.
+- Kode sudah pernah dipakai di run/submit sebelumnya.
+
+**Solusi (tanpa re-run):**
+
+1. Jangan tutup workflow. Setelah registrasi gagal, form **aktif lagi**
+   (status `failed`).
+2. Buka <https://remotedesktop.google.com/headless>.
+3. **Begin → Next → Authorize** sampai muncul perintah **Debian Linux** yang
+   baru. Pastikan akun Google-nya sama.
+4. Copy **seluruh** perintah baru tersebut.
+5. Paste ke form yang sama, lalu submit lagi.
+
+Workflow akan mencoba mendaftarkan kode baru itu. Anda bisa mengulang selama
+window **30 menit** masih berjalan. Tidak perlu re-run workflow.
+
+Kalau window sudah habis atau tunnel sudah tidak ada, jalankan ulang workflow.
+Cache `.deb` sudah tersimpan sebelum registrasi, jadi re-run jauh lebih cepat.
+
+> Untuk workflow lama **`gnome.yml`**: alurnya berbeda. Ambil perintah baru,
+> lalu **Re-run** workflow dan paste perintah itu ke input `crd_host_command`.
+
+---
+
+## 4. Workflow "READY" tapi device tidak muncul di Remote Access
 
 1. Pastikan log benar-benar sudah mencapai:
 
@@ -78,25 +121,25 @@ lebih cepat daripada run pertama.
    sudo systemctl start chrome-remote-desktop@runner
    ```
 
-Filename device yang muncul adalah **gnome** (di-override di workflow), bukan
+Nama device yang muncul adalah **gnome** (di-override di workflow), bukan
 hostname runner.
 
 ---
 
-## 4. Tidak bisa connect / PIN ditolak
+## 5. Tidak bisa connect / PIN ditolak
 
 - PIN default adalah `123456`. Kalau Anda set secret `CRD_PIN`, pakai nilai itu
   (minimal 6 digit).
 - Halaman CRD kadang butuh beberapa detik setelah device muncul; coba lagi.
-- Kalau PIN salah terus, hentikan workflow, ambil perintah `headless` baru
-  (registrasi ulang akan mengganti PIN), lalu run ulang.
+- Kalau PIN salah terus, hentikan workflow, jalankan ulang, lalu registrasi
+  ulang dengan perintah `headless` baru (registrasi baru akan mengganti PIN).
 
 ---
 
-## 5. Sesi putus tiba-tiba
+## 6. Sesi putus tiba-tiba
 
 **Penyebab paling umum:** menjalankan `sudo apt upgrade -y` polos di dalam sesi.
-itu me-restart `chrome-remote-desktop@runner`, `gnome-shell`, atau systemd,
+Itu me-restart `chrome-remote-desktop@runner`, `gnome-shell`, atau systemd,
 sehingga koneksi terputus.
 
 **Solusi:** selalu pakai:
@@ -116,15 +159,19 @@ Kalau sesi sudah terlanjur putus, biasanya cukup:
 
 ---
 
-## 6. Sesi berakhir sendiri setelah beberapa jam
+## 7. Sesi berakhir sendiri setelah beberapa jam
 
-Itu **perilaku normal**. Job GitHub-hosted maksimum **6 jam**; workflow sengaja
-tidur (`sleep 21600`) lalu runner dimatikan. Simpan pekerjaan Anda ke
-GitHub/cloud sebelum berakhir — VM tidak memiliki penyimpanan permanen.
+Itu **perilaku normal**. Job GitHub-hosted maksimum **6 jam**. Workflow
+menghitung sisa waktu dari awal job lalu tidur sampai mendekati batas itu
+(bukan `sleep 21600` tetap), setelah itu runner dimatikan.
+
+Simpan pekerjaan Anda ke GitHub/cloud sebelum berakhir — VM tidak memiliki
+penyimpanan permanen. Ingat juga bahwa window otorisasi 30 menit memakai waktu
+dari batas 6 jam yang sama.
 
 ---
 
-## 7. Resolusi layar aneh / terlalu kecil
+## 8. Resolusi layar aneh / terlalu kecil
 
 Workflow mengunci resolusi ke **1024x768**, yang merupakan mode native driver
 `dummy` pada sesi CRD headless (jadi tahan re-attach). Ubah sementara lewat
@@ -134,7 +181,7 @@ Workflow mengunci resolusi ke **1024x768**, yang merupakan mode native driver
 
 ---
 
-## 8. `virt-manager` / GNOME Boxes bermasalah
+## 9. `virt-manager` / GNOME Boxes bermasalah
 
 **"Permission denied" saat akses libvirt socket:**
 
@@ -146,7 +193,8 @@ Sesi Anda mungkin dijalankan sebelum `runner` masuk grup `libvirt`/`kvm`.
 
 **"Cannot access KVM" / VM sangat lambat:**
 
-Runner x86 `ubuntu-24.04` punya `/dev/kvm`. Cek:
+Runner x86 **`ubuntu-26.04`** (workflow `gnome26.yml`) punya `/dev/kvm`. Workflow
+lama `gnome.yml` memakai `ubuntu-24.04`. Cek:
 
 ```bash
 ls -l /dev/kvm      # harus ada
@@ -159,7 +207,7 @@ emulasi software (jauh lebih lambat).
 
 ---
 
-## 9. Tema / ikon tidak berubah
+## 10. Tema / ikon tidak berubah
 
 Catppuccin Macchiato (Mauve) sudah diterapkan lewat `gsettings` untuk user
 `runner`. Kalau aplikasi tertentu (khususnya GTK4/libadwaita) masih terlihat
@@ -172,22 +220,33 @@ default:
 
 ---
 
-## 10. Cara mengambil log untuk laporan issue
+## 11. Cara mengambil log untuk laporan issue
 
 1. Buka tab **Actions** → klik run yang bermasalah.
 2. Klik job **build** → klik step yang gagal untuk expand log.
-3. Copy **potongan** log yang relevan (jangan seluruhnya, dan **jangan** sertakan
-   kode OAuth/PIN).
+3. Copy **potongan** log yang relevan. **Jangan** sertakan:
+   - URL form / token,
+   - kode OAuth (`--code=...`),
+   - PIN,
+   - isi `crd_host_command`.
 4. Buka issue dengan template **Bug report**.
 
 ---
 
-## 11. Re-run cepat vs. run dari nol
+## 12. Re-run cepat vs. run dari nol
 
 | | Run dari nol | Re-run setelah gagal |
 |---|---|---|
 | Cache `.deb` | kosong (unduh ~GB) | terpakai |
 | Perkiraan waktu | 20–40 menit | jauh lebih cepat |
 
-Jika gagal di langkah registrasi (OAuth), **selalu pilih Re-run**, bukan run
-baru, supaya cache terpakai. Jangan lupa ambil perintah CRD **baru** dulu.
+Untuk workflow **GNOME 26**:
+
+- Registrasi gagal karena kode auth → **tidak perlu re-run**; ambil kode baru
+  dan submit lagi di form selama window 30 menit.
+- Window otorisasi habis atau tunnel gagal → baru lakukan re-run.
+
+Untuk workflow lama **`gnome.yml`**:
+
+- Registrasi gagal → ambil perintah CRD baru, lalu **Re-run** dan paste ke input
+  `crd_host_command`.

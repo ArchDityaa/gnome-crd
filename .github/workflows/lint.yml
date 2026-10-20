@@ -54,8 +54,10 @@ jobs:
       #   SC2016 - escaping ANSI (`\033`) di dalam kutip tunggal memang disengaja
       #   SC2034 - variabel warna (mis. C_RED) tidak dipakai di setiap step
       #   SC2012 - `ls` pada step verifikasi, hanya untuk menampilkan info
+      #   label "ubuntu-26.04" - label runner GitHub-hosted baru; actionlint
+      #                          1.7.12 belum mengenalinya (bukan error workflow)
       - name: actionlint
-        run: actionlint -color -ignore SC2016 -ignore SC2034 -ignore SC2012
+        run: actionlint -color -ignore SC2016 -ignore SC2034 -ignore SC2012 -ignore 'label "ubuntu-26.04" is unknown'
 
       - name: yamllint
         run: yamllint -f parsable .

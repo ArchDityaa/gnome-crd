@@ -7,6 +7,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Added
 
+- `scripts/crd-web-auth.py` — server form otorisasi Chrome Remote Desktop
+  berbasis Python stdlib. URL memakai token acak 128-bit, server hanya bind ke
+  `127.0.0.1`, perintah divalidasi ketat, status ditampilkan live, dan hanya
+  satu perintah yang diproses pada satu waktu.
+- `.github/workflows/gnome26.yml` — STEP 17 baru: form otorisasi web lewat
+  **Cloudflare quick tunnel** setelah desktop siap. Kode OAuth dibuat setelah
+  instalasi, window 30 menit, status `waiting/queued/registering/success/failed`,
+  retry kode baru tanpa re-run, restart tunnel otomatis, dan fallback opsional
+  `crd_host_command`.
 - `.github/workflows/lint.yml` — CI yang memvalidasi seluruh file YAML
   (`yamllint`), workflow GitHub Actions (`actionlint`, binary diunduh dari rilis
   resmi dengan verifikasi checksum), dan skrip shell (`shellcheck`). Berjalan
@@ -19,9 +28,34 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Changed
 
-- README (ID & EN): banner, badge (status CI Lint, lisensi, runner, desktop,
-  PRs welcome), diagram alur Mermaid, bagian Kontribusi, dan slot galeri
-  screenshot (dikomentari sampai gambar asli tersedia).
+- `gnome26.yml`: input `crd_host_command` menjadi **opsional** (fallback),
+  header/instruksi memakai alur form web, komentar checkout diperbarui, dan
+  keep-alive menghitung sisa waktu dari `JOB_START_EPOCH` (bukan `sleep 21600`).
+- README (ID & EN): alur utama sekarang **GNOME 26** (Ubuntu 26.04 + form web),
+  badge runner, diagram Mermaid, langkah authorize, keamanan token, troubleshooting,
+  dan struktur repo diperbarui. Workflow lama `gnome.yml` tetap didokumentasikan
+  sebagai legacy.
+- `docs/troubleshooting.md`: tambah bagian form web/Cloudflare, registrasi gagal
+  tanpa re-run, window 30 menit, dan update runner 26.04.
+- `docs/faq.md`: tambah Q&A tentang kode auth setelah desktop siap, retry tanpa
+  re-run, Cloudflare quick tunnel, keamanan URL form, dan perbedaan
+  `gnome26.yml` vs `gnome.yml`.
+- `.github/ISSUE_TEMPLATE/bug_report.yml`: opsi masalah form web, peringatan
+  token URL, dan checklist retry tanpa re-run.
+- `.github/workflows/lint.yml`: `actionlint` mengabaikan label
+  `ubuntu-26.04` yang belum dikenali actionlint 1.7.12.
+- `.gitignore`: tambah `__pycache__/` dan `*.pyc` untuk skrip Python baru.
+
+### Fixed
+
+- **Kode OAuth tidak lagi kedaluwarsa selama instalasi.** Registrasi CRD kini
+  meminta kode setelah desktop siap lewat form web, bukan di awal run.
+- **Registrasi gagal tidak lagi memaksa re-run.** Form aktif lagi setelah
+  `failed`; user bisa mengambil kode baru dan submit ulang dalam window 30 menit.
+- **Validasi perintah menolak metakarakter shell** (`$(`, backtick, `;`, `&`,
+  `|`, `>`, `<`, `\`, newline, dan karakter kontrol).
+- **Cleanup tunnel/server deterministik**: SIGTERM, tunggu, lalu SIGKILL bila
+  proses tidak berhenti.
 
 ## [1.0.0] - 2026-10-18
 

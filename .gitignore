@@ -9,3 +9,7 @@ Thumbs.db
 # Log & artefak lokal
 *.log
 tmp/
+
+# Python
+__pycache__/
+*.pyc

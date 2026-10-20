@@ -1,14 +1,14 @@
 name: Bug report
-description: Laporkan masalah pada workflow RICH LINUX (GNOME + CRD)
+description: Laporkan masalah pada workflow GNOME 26 (GNOME + CRD)
 title: "[Bug] "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Terima kasih sudah melapor. **Jangan pernah paste** isi
-        `crd_host_command`, kode OAuth (`--code=...`), atau PIN Anda.
-        Cukup tempelkan potongan LOG yang relevan.
+        Terima kasih sudah melapor. **Jangan pernah paste** URL form otorisasi
+        (mengandung token), isi `crd_host_command`, kode OAuth (`--code=...`),
+        atau PIN Anda. Cukup tempelkan potongan LOG yang relevan.
 
   - type: dropdown
     id: where
@@ -16,7 +16,8 @@ body:
       label: Di mana masalahnya?
       options:
         - Workflow gagal saat build/install
-        - Workflow gagal saat register Chrome Remote Desktop
+        - URL form otorisasi tidak muncul / error Cloudflare
+        - Registrasi Chrome Remote Desktop via form gagal
         - Sudah "READY" tapi tidak bisa connect
         - Desktop/sesi bermasalah setelah connect (tema, resolusi, dsb.)
         - Lainnya
@@ -27,7 +28,7 @@ body:
     id: step
     attributes:
       label: Nama step yang gagal (jika workflow gagal)
-      placeholder: "Contoh: Register Chrome Remote Desktop"
+      placeholder: "Contoh: Authorize & Register Chrome Remote Desktop (Web UI)"
     validations:
       required: false
 
@@ -64,7 +65,7 @@ body:
       options:
         - label: Saya sudah mengaktifkan Actions di fork (Settings → Actions → Allow all actions).
           required: false
-        - label: Saya sudah mencoba Re-run workflow dengan perintah CRD yang baru.
+        - label: Kalau registrasi gagal, saya sudah mencoba submit kode BARU di form tanpa re-run.
           required: false
-        - label: Saya tidak menyertakan kode OAuth / PIN di laporan ini.
+        - label: Saya tidak menyertakan URL form/token, kode OAuth, atau PIN di laporan ini.
           required: true

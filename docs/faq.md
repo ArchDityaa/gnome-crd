@@ -11,7 +11,8 @@ Kalau fork Anda **private**, run akan memakai kuota menit gratis akun Anda
 ## Berapa lama sesi bisa hidup?
 
 Maksimum **6 jam** per run (batas job GitHub-hosted). Workflow mengatur
-`timeout-minutes: 360` dan tidur sampai batas itu, lalu runner dimatikan.
+`timeout-minutes: 360` dan menghitung sisa waktu dari awal job, lalu runner
+dimatikan. Window otorisasi 30 menit memakai bagian dari waktu tersebut.
 
 ## Apakah data saya tersimpan?
 
@@ -57,12 +58,71 @@ Workflow sengaja meng-override `--name` menjadi `gnome` supaya mudah dikenali di
 daftar perangkat Remote Access (kalau tidak, namanya akan berupa hostname acak
 milik runner).
 
-## Apakah aman? Apakah orang lain bisa masuk?
+## Kenapa kode auth baru diminta setelah desktop siap?
 
-Akses Chrome Remote Desktop tetap memerlukan **login akun Google** pemilik
-perintah `headless` **dan** PIN. Meski begitu, ganti PIN default dan jangan
-bagikan kode OAuth. Kode OAuth (`--code=`) bersifat sekali pakai sehingga tidak
-berguna bagi orang lain setelah dipakai.
+Kode `--code=...` dari halaman `headless` bersifat **sekali pakai** dan cepat
+kedaluwarsa. Instalasi desktop memakan **20–40 menit**, jadi kalau kode diambil
+di awal, kode sudah mati saat registrasi.
+
+Workflow baru menunggu desktop siap, lalu menampilkan **form web**. Anda baru
+membuat kode setelah itu, lalu langsung paste ke form. Dengan begitu kode segar
+saat dipakai.
+
+## Bagaimana cara authorize di workflow GNOME 26?
+
+1. Jalankan workflow **GNOME 26** tanpa input auth.
+2. Tunggu sampai log menampilkan `[OK] FORM OTORISASI SIAP` (±20–40 menit).
+3. Buka URL form dari log atau **Job Summary**.
+4. Di tab lain, buka <https://remotedesktop.google.com/headless>, lalu
+   **Begin → Next → Authorize**.
+5. Copy **seluruh** perintah **Debian Linux**, paste ke form, submit.
+6. Setelah `[OK] CHROME REMOTE DESKTOP READY`, buka
+   <https://remotedesktop.google.com/access>.
+
+## Kalau kode auth gagal, apakah harus re-run workflow?
+
+**Tidak**, selama window 30 menit masih berjalan. Setelah registrasi gagal,
+form aktif lagi. Ambil kode **baru** di halaman headless, lalu submit lagi ke
+form yang sama. Workflow akan mencoba mendaftarkan kode baru tanpa re-run.
+
+Re-run baru diperlukan kalau:
+- window 30 menit habis,
+- tunnel Cloudflare gagal dibuat,
+- atau workflow sudah berhenti.
+
+## Apa itu form web dan Cloudflare quick tunnel? Perlu akun Cloudflare?
+
+Form web adalah halaman kecil yang dijalankan workflow di dalam runner
+(`127.0.0.1`) dan diekspos lewat **Cloudflare quick tunnel**. Fungsinya supaya
+Anda bisa mengirim perintah CRD dari HP/jaringan lain setelah desktop siap.
+
+**Tidak perlu akun Cloudflare.** Quick tunnel membuat URL acak
+`https://....trycloudflare.com` tanpa login. Konsekuensinya tidak ada SLA;
+kadang URL perlu ±15 detik untuk aktif, dan bisa berubah kalau tunnel restart.
+
+## Apakah form web aman? Siapa yang bisa submit?
+
+URL form mengandung **token acak 128-bit**. Tanpa token, server mengembalikan
+404. Server hanya mendengarkan di `127.0.0.1`; satu-satunya jalan masuk adalah
+tunnel Cloudflare. Perintah yang masuk juga divalidasi ketat (harus
+`start-host`, tidak boleh mengandung metakarakter shell).
+
+Tetap ada risiko: **siapa pun yang melihat URL itu selama window 30 menit bisa
+mengirim perintah**. Di repo **publik**, URL terlihat di log dan Job Summary
+selama run. Karena itu:
+
+- jangan bagikan URL form,
+- tutup tab setelah selesai,
+- kalau repo Anda publik dan ini sensitif, gunakan **fork private**.
+
+Akses CRD tetap memerlukan login akun Google Anda **dan** PIN.
+
+## Apakah orang lain bisa masuk ke desktop saya?
+
+Tidak tanpa akses ke akun Google yang dipakai untuk registrasi **dan** PIN.
+Namun, kalau seseorang sempat memakai URL form untuk mendaftarkan device ke akun
+Google **miliknya**, device itu menjadi miliknya. Karena itu URL form harus
+dirahasiakan selama 30 menit.
 
 ## Bisakah menjalankan lebih dari satu sesi sekaligus?
 
@@ -86,6 +146,13 @@ Di halaman repo fork Anda, klik **Sync fork → Update branch**. Perubahan pada
 Karena harus mengunduh dan memasang GNOME, Chrome, VS Code, CRD, theme, dan font
 (beberapa GB). Setelah run pertama, cache `.deb` tersimpan sehingga run
 berikutnya (dan re-run) jauh lebih cepat.
+
+## Apa bedanya `gnome26.yml` dan `gnome.yml`?
+
+- **`gnome26.yml` (GNOME 26)** — alur terbaru, Ubuntu 26.04, form otorisasi web
+  setelah desktop siap. Ini yang sebaiknya dipakai.
+- **`gnome.yml` (RICH LINUX)** — alur lama, Ubuntu 24.04, perintah CRD diambil
+  **sebelum** run lalu di-paste ke input `crd_host_command`.
 
 ## Apakah bisa diakses lewat VNC/RDP, bukan Chrome Remote Desktop?
 

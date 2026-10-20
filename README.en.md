@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml"><img src="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
   <a href="https://github.com/ArchDityaa/gnome-crd/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/runner-ubuntu--24.04-E95420.svg" alt="Runner: ubuntu-24.04">
+  <img src="https://img.shields.io/badge/runner-ubuntu--26.04-E95420.svg" alt="Runner: ubuntu-26.04">
   <img src="https://img.shields.io/badge/session-max%206h-orange.svg" alt="Session: max 6h">
   <img src="https://img.shields.io/badge/desktop-GNOME-4A86CF.svg" alt="Desktop: GNOME">
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome">
@@ -28,19 +28,26 @@ Good for:
 ```mermaid
 flowchart LR
   A[Fork repo] --> B[Enable Actions]
-  B --> C[Get CRD command<br/>remotedesktop.google.com/headless]
-  C --> D[Run workflow<br/>paste command + PIN]
-  D --> E[ubuntu-24.04 runner<br/>installs GNOME, Chrome, VS Code, theme]
-  E --> F[Device 'gnome' appears]
-  F --> G[Connect from browser<br/>remotedesktop.google.com/access]
-  G --> H[GNOME desktop<br/>up to 6 hours]
+  B --> C[Run workflow<br/>no auth input]
+  C --> D[ubuntu-26.04 runner<br/>installs GNOME, Chrome, VS Code, theme]
+  D --> E[Workflow shows form URL<br/>Cloudflare quick tunnel]
+  E --> F[Open URL and authorize<br/>at remotedesktop.google.com/headless]
+  F --> G[Paste Debian command<br/>into the web form]
+  G --> H[Device 'gnome' registered]
+  H --> I[Connect from browser<br/>remotedesktop.google.com/access]
+  I --> J[GNOME desktop<br/>up to 6 hours]
 ```
+
+> **Important:** you no longer get the Chrome Remote Desktop auth code at the
+> start. The workflow waits until the desktop is ready, then shows a web form.
+> The code you create after that is used immediately, so it will not expire
+> during installation.
 
 ---
 
 ## What you get
 
-One **Ubuntu 24.04** virtual machine (4 vCPU / 16 GB RAM) with a pre-configured
+One **Ubuntu 26.04** virtual machine (4 vCPU / 16 GB RAM) with a pre-configured
 GNOME desktop, alive for up to **6 hours**, then it shuts down automatically.
 Every run is a clean environment — when it ends, it's gone.
 
@@ -91,6 +98,7 @@ shortcuts.
 - A **GitHub** account (free). Public repos get unlimited Actions minutes.
 - A **Google** account (for Chrome Remote Desktop).
 - Chrome/Chromium (to open the Remote Access page).
+- No Cloudflare account — the workflow creates a quick tunnel automatically.
 
 No credit card, no server, no self-hosted runner.
 
@@ -109,9 +117,34 @@ Click **Fork** (top right) → **Create fork**.
 > **Settings** → **Actions** → **General** → select **Allow all actions and
 > reusable workflows** → **Save**.
 
-### 3. Get your Chrome Remote Desktop command
+### 3. Run the workflow (no auth input)
 
-1. Open <https://remotedesktop.google.com/headless> (sign in with Google).
+1. Open the **Actions** tab in your fork.
+2. Select **GNOME 26** in the left sidebar.
+3. Click **Run workflow** (top right).
+4. Leave **crd_host_command** **empty** — it is only a fallback.
+5. Click the green **Run workflow**.
+
+**Optional — change the PIN:** add a `CRD_PIN` secret under
+**Settings → Secrets and variables → Actions → New repository secret**
+(value: at least 6 digits). If unset, the default PIN is `123456`.
+
+### 4. Open the auth form and authorize
+
+After installation finishes (**~20–40 minutes**), the log shows:
+
+```
+[OK] FORM OTORISASI SIAP
+```
+
+The form URL also appears in the run's **Job Summary**. Open it (from your phone
+or another network is fine). If Cloudflare shows **1033/502**, wait ~15 seconds
+and refresh — the tunnel is warming up.
+
+Then:
+
+1. In another tab, open <https://remotedesktop.google.com/headless> and sign in
+   to your Google account.
 2. Click **Begin** → **Next** → **Authorize**.
 3. Under **"Set up another computer" / "Debian Linux"**, copy the **ENTIRE**
    command shown. It looks like:
@@ -120,25 +153,18 @@ Click **Fork** (top right) → **Create fork**.
    DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0Ab..." --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)
    ```
 
-   > **Important:** the `--code=...` value is **single-use** and expires quickly.
-   > Do not wait before pasting and running step 4.
+4. Paste that command into the form and submit.
 
-### 4. Run the workflow
+The form shows live status. If registration fails (wrong, expired, or already
+used code), get a **NEW code** from the headless page and submit it again in the
+same form — **no workflow re-run needed** while the 30-minute window is open.
 
-1. Open the **Actions** tab in your fork.
-2. Select **RICH LINUX (GNOME + Chrome Remote Desktop)** in the left sidebar.
-3. Click **Run workflow** (top right).
-4. Paste the entire command from step 3 into the **crd_host_command** field.
-5. Click the green **Run workflow**.
-
-**Optional — change the PIN:** add a `CRD_PIN` secret under
-**Settings → Secrets and variables → Actions → New repository secret**
-(value: at least 6 digits). If unset, the default PIN is `123456`.
+> **Do not share the form URL.** It contains a random token and acts as a
+> temporary credential for about 30 minutes.
 
 ### 5. Wait & connect
 
-Installation takes **~20–40 minutes** (the first run is the slowest; later runs
-are faster thanks to the `.deb` cache). Once the log shows:
+Once the log shows:
 
 ```
 [OK] CHROME REMOTE DESKTOP READY
@@ -153,6 +179,10 @@ and enter the PIN.
 | **PIN** | `123456` (or your `CRD_PIN` secret) |
 | **Device** | `gnome` |
 | **Duration** | up to ~6 hours, then the VM is shut down automatically |
+
+> The legacy **`gnome.yml`** workflow (RICH LINUX, Ubuntu 24.04) is still
+> available and uses the old flow: get the CRD command **before** running, then
+> paste it into `crd_host_command`. For the latest flow, use **GNOME 26**.
 
 ---
 
@@ -180,14 +210,26 @@ and enter the PIN.
 - **6 hours per run, maximum.** This is the GitHub-hosted job limit. Plan your
   work and push results elsewhere, because the VM is destroyed afterwards.
 - **Disposable instance.** Nothing persists between runs.
+- **30-minute auth window.** After the desktop is ready, the web form accepts a
+  command for 30 minutes only. If it expires, the workflow fails and must be
+  re-run (the `.deb` cache makes re-runs faster).
+- **Cloudflare quick tunnels have no SLA.** The URL is random and may need a
+  refresh on first open. If the tunnel dies, the workflow tries to restart it up
+  to 3 times and prints a new URL.
 - **Use within GitHub Actions ToS.** GitHub permits Actions for *production,
   testing, deployment, or publication* of software. This repo is intended for
   **experiments and tool testing**; don't use it as general-purpose hosting or
   for crypto mining.
 - **Credential safety:**
-  - The `crd_host_command` is visible in the run metadata (the `--code=...` is
-    single-use, so the risk is low). If you'd rather not expose it, make your
-    fork **private** (private Actions consume your free minutes quota).
+  - The form URL contains a **random 128-bit token**. Anyone who opens that URL
+    during the 30-minute window can submit a registration command. **Do not
+    share the URL**, and close the form tab when done.
+  - On a **public** repo, logs and the **Job Summary** are also visible to
+    anyone while the run is active. If that is a concern, use a **private fork**.
+  - The OAuth code (`--code=...`) is still **single-use**. It is created after
+    the desktop is ready, so it won't expire during installation.
+  - `crd_host_command` is an **optional fallback**. If you fill it at the start,
+    the code may expire before registration; prefer the web form.
   - Change the default PIN `123456`. CRD access still requires your Google
     login, but a strong PIN is recommended.
 - **Staying up to date:** forks don't auto-update. Use GitHub's **Sync fork**
@@ -200,7 +242,10 @@ and enter the PIN.
 | Problem | Cause & fix |
 |---|---|
 | Workflow missing from the Actions tab | Actions not enabled on the fork → **Settings → Actions → General → Allow all actions**. |
-| Run fails at *Register Chrome Remote Desktop* | The OAuth code expired or was already used. Get a **fresh** command at <https://remotedesktop.google.com/headless>, then **Re-run** this workflow (the `.deb` cache makes re-runs much faster). |
+| Form URL does not appear | Check the **Authorize & Register Chrome Remote Desktop (Web UI)** step log. If you see `[FAIL] Cloudflare quick tunnel tidak bisa dibuat`, re-run the workflow (the `.deb` cache is reused), or re-run with `crd_host_command` filled as a fallback using a fresh code. |
+| Cloudflare 1033/502 on the form page | The tunnel is warming up. Wait ~15 seconds and refresh. If it still fails, wait for a new URL in the log (the workflow restarts the tunnel automatically). |
+| Registration through the form fails | The OAuth code expired or was already used. Get a **fresh** command at <https://remotedesktop.google.com/headless>, then submit it again in the same form. No re-run needed while the 30-minute window is open. |
+| The 30-minute window expired | The workflow stops. Re-run it; the `.deb` cache makes installation much faster. |
 | Device not shown in Remote Access | Wait until the log shows `[OK] CHROME REMOTE DESKTOP READY`. If it's still missing, refresh the page and check `systemctl status chrome-remote-desktop@runner`. |
 | Session drops while updating packages | You used plain `apt upgrade`. Use `sudo safe-upgrade`. |
 | Odd resolution / small screen | Locked to `1024x768` (native `dummy` driver mode). Adjust via *Settings → Displays*. |
@@ -219,11 +264,13 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 .
 ├── .github/
 │   ├── workflows/
-│   │   ├── gnome.yml            # the main workflow you run
+│   │   ├── gnome26.yml          # main workflow (web auth form)
+│   │   ├── gnome.yml            # legacy workflow (command at start)
 │   │   └── lint.yml             # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml
 ├── scripts/
+│   ├── crd-web-auth.py          # auth form server (token + status)
 │   └── safe-upgrade.sh          # session-safe upgrade helper
 ├── docs/
 │   ├── images/banner.svg
@@ -251,8 +298,10 @@ Run the same linters locally before pushing:
 pip install yamllint
 yamllint .
 shellcheck scripts/*.sh
+python3 -m py_compile scripts/crd-web-auth.py
 # actionlint: https://github.com/rhysd/actionlint
-actionlint -ignore SC2016 -ignore SC2034 -ignore SC2012
+actionlint -ignore SC2016 -ignore SC2034 -ignore SC2012 \
+  -ignore 'label "ubuntu-26.04" is unknown'
 ```
 
 ---
