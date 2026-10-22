@@ -59,6 +59,12 @@ workflows → Save**. Lalu refresh tab Actions; workflow akan muncul.
 > URL form hanya berlaku ±30 menit. Jangan menutup tab form sebelum registrasi
 > selesai; kalau tab tertutup, buka lagi URL yang sama selama window masih ada.
 
+> Form punya toggle bahasa **ID/EN** dan tema **Auto/Light/Dark** di header;
+> preferensi ini tersimpan di browser. Polling status dijeda saat tab
+> disembunyikan dan lanjut otomatis saat tab aktif lagi. Kalau tombol submit
+> tetap nonaktif, baca pesan validasi di bawah textarea — biasanya perintah
+> terpotong atau masih memuat metakarakter shell.
+
 ---
 
 ## 3. Registrasi CRD gagal / kode auth bermasalah

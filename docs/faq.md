@@ -82,6 +82,17 @@ saat dipakai.
    <https://remotedesktop.google.com/access> dan pilih device `gnome` atau
    `cinnamon` sesuai workflow.
 
+## Fitur apa saja yang ada di form web?
+
+Form web memakai layout responsif dua kolom dengan tema Catppuccin **Auto /
+Light / Dark** dan toggle bahasa **ID / EN**. Panduan 4 langkah, status
+registrasi, hitung mundur, progress bar, dan validasi format perintah tampil
+langsung di halaman. Tersedia tombol **Paste**, **Clear**, **Copy device name**,
+serta shortcut <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd> untuk submit.
+Setelah berhasil, form diganti panel sukses berisi nama device dan tautan Remote
+Access. Preferensi bahasa/tema disimpan di `localStorage`; perintah dan kode
+OAuth tidak disimpan di browser.
+
 ## Kalau kode auth gagal, apakah harus re-run workflow?
 
 **Tidak**, selama window 30 menit masih berjalan. Setelah registrasi gagal,
@@ -108,7 +119,10 @@ kadang URL perlu ±15 detik untuk aktif, dan bisa berubah kalau tunnel restart.
 URL form mengandung **token acak 128-bit**. Tanpa token, server mengembalikan
 404. Server hanya mendengarkan di `127.0.0.1`; satu-satunya jalan masuk adalah
 tunnel Cloudflare. Perintah yang masuk juga divalidasi ketat (harus
-`start-host`, tidak boleh mengandung metakarakter shell).
+`start-host`, tidak boleh mengandung metakarakter shell). Validasi yang sama
+dijalankan di browser sebagai peringatan awal, tetapi server tetap menjadi
+penentu akhir. Perintah dan kode OAuth tidak disimpan di `localStorage`; hanya
+preferensi bahasa/tema yang disimpan.
 
 Tetap ada risiko: **siapa pun yang melihat URL itu selama window 30 menit bisa
 mengirim perintah**. Di repo **publik**, URL terlihat di log dan Job Summary

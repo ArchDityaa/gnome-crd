@@ -15,6 +15,11 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   berbasis Python stdlib. URL memakai token acak 128-bit, server hanya bind ke
   `127.0.0.1`, perintah divalidasi ketat, status ditampilkan live, dan hanya
   satu perintah yang diproses pada satu waktu.
+- `scripts/crd-web-auth.py` — **UI form v2**: toggle bahasa Indonesia/English,
+  tema Catppuccin Auto/Light/Dark, layout responsif dua kolom, panduan 4 langkah,
+  badge status, hitung mundur + progress bar, validasi perintah di browser,
+  tombol salin/tempel, shortcut Ctrl/Cmd+Enter, dan panel sukses. Respons
+  `/status` kini menyertakan `server_time` (server version `2.0`).
 - `.github/workflows/gnome26.yml` — STEP 17 baru: form otorisasi web lewat
   **Cloudflare quick tunnel** setelah desktop siap. Kode OAuth dibuat setelah
   instalasi, window 30 menit, status `waiting/queued/registering/success/failed`,

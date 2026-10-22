@@ -173,6 +173,14 @@ kedaluwarsa, atau sudah terpakai), **ambil kode BARU** di halaman headless lalu
 submit lagi ke form yang sama — **tidak perlu re-run workflow** selama window
 30 menit masih berjalan.
 
+Tampilan form sudah diperbarui: layout dua kolom yang responsif, tema Catppuccin
+**Auto / Light / Dark** (tombol di kanan atas), dan toggle bahasa **ID / EN**.
+Panduan 4 langkah, status, hitung mundur, progress bar, serta validasi format
+perintah tampil langsung. Gunakan **Paste**, **Clear**, atau **Copy device name**
+untuk mempercepat pengisian, dan <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>
+untuk submit. Perintah dan kode OAuth **tidak** disimpan di browser; hanya
+preferensi bahasa/tema (`crd.lang`, `crd.theme`) yang disimpan di `localStorage`.
+
 > **Jangan bagikan URL form.** URL itu mengandung token acak dan berlaku sebagai
 > kredensial sementara selama ±30 menit.
 

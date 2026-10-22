@@ -172,6 +172,14 @@ The form shows live status. If registration fails (wrong, expired, or already
 used code), get a **NEW code** from the headless page and submit it again in the
 same form — **no workflow re-run needed** while the 30-minute window is open.
 
+The form has been refreshed: responsive two-column layout, Catppuccin
+**Auto / Light / Dark** theme (top-right button), and an **ID / EN** language
+toggle. A 4-step guide, status, countdown, progress bar, and command validation
+are shown inline. Use **Paste**, **Clear**, or **Copy device name** to fill it
+faster, and <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd> to submit. Commands
+and OAuth codes are **not** stored in the browser; only the language/theme
+preferences (`crd.lang`, `crd.theme`) are saved in `localStorage`.
+
 > **Do not share the form URL.** It contains a random token and acts as a
 > temporary credential for about 30 minutes.
 
