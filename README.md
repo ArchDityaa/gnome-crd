@@ -29,13 +29,13 @@ Cocok untuk:
 flowchart LR
   A[Fork repo] --> B[Aktifkan Actions]
   B --> C[Run workflow<br/>tanpa input auth]
-  C --> D[Runner ubuntu-26.04<br/>pasang GNOME, Chrome, VS Code, theme]
+  C --> D[Runner ubuntu-26.04<br/>pasang GNOME atau Cinnamon, Chrome, VS Code, theme]
   D --> E[Workflow tampilkan URL form<br/>Cloudflare quick tunnel]
   E --> F[Buka URL lalu authorize<br/>di remotedesktop.google.com/headless]
   F --> G[Paste perintah Debian<br/>ke form web]
-  G --> H[Device 'gnome' terdaftar]
+  G --> H[Device 'gnome' / 'cinnamon' terdaftar]
   H --> I[Connect dari browser<br/>remotedesktop.google.com/access]
-  I --> J[Desktop GNOME<br/>maksimum 6 jam]
+  I --> J[Desktop GNOME / Cinnamon<br/>maksimum 6 jam]
 ```
 
 > **Penting:** kode auth Chrome Remote Desktop **tidak lagi diambil di awal**.
@@ -46,23 +46,37 @@ flowchart LR
 
 ## Apa yang Anda dapatkan
 
-Satu virtual machine **Ubuntu 26.04** (4 vCPU / 16 GB RAM) dengan desktop GNOME
-yang sudah dikonfigurasi, hidup sampai **6 jam**, lalu otomatis mati. Setiap run
-adalah lingkungan bersih — selesai, hilang.
+Satu virtual machine **Ubuntu 26.04** (4 vCPU / 16 GB RAM) dengan desktop
+**GNOME** atau **Cinnamon** yang sudah dikonfigurasi, hidup sampai **6 jam**,
+lalu otomatis mati. Setiap run adalah lingkungan bersih — selesai, hilang.
 
 | Sudah terpasang | Keterangan |
 |---|---|
-| **GNOME Desktop** | Sesi penuh (`ubuntu` GNOME session), bukan XFCE |
+| **GNOME Desktop** | Sesi penuh (`ubuntu` GNOME session), bukan XFCE — workflow `GNOME 26` |
+| **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — workflow `Cinnamon 26` |
 | **Google Chrome** | Bisa langsung dipakai login akun Google |
 | **VS Code** | `code` |
 | **OpenCode CLI + Desktop** | CLI di `/usr/local/bin/opencode`, plus app desktop |
 | **Chrome Remote Desktop** | Jalur akses utamanya |
-| **virt-manager + GNOME Boxes + libvirt/QEMU** | Untuk menjalankan VM di dalamnya (nested) |
-| **Catppuccin Macchiato + Mauve** | Theme GTK/Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font |
+| **virt-manager + libvirt/QEMU** | Untuk menjalankan VM di dalamnya (nested). GNOME juga menyertakan GNOME Boxes |
+| **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font |
 | **safe-upgrade** | Pengganti `apt upgrade` yang tidak memutus sesi |
 
-Plus: timezone **WIB (Asia/Jakarta)**, screensaver & lock dimatikan, animasi GNOME
-dihidupkan pada software rendering, wallpaper Catppuccin, dan shortcut di Desktop.
+Plus: timezone **WIB (Asia/Jakarta)**, screensaver & lock dimatikan, wallpaper
+Catppuccin, dan shortcut di Desktop.
+
+### Varian desktop
+
+| | **GNOME 26** | **Cinnamon 26** |
+|---|---|---|
+| Workflow | `.github/workflows/gnome26.yml` | `.github/workflows/cinnamon.yml` |
+| Desktop | GNOME (sesi `ubuntu`) | Cinnamon 6.4 (sesi `cinnamon`, X11) |
+| Device CRD | `gnome` | `cinnamon` |
+| File manager | Nautilus | Nemo |
+| Catatan | Animasi dipaksa hidup lewat ekstensi | Animasi bisa tetap off karena Cinnamon mematikan efek saat software rendering (llvmpipe) |
+
+Keduanya memakai runner `ubuntu-26.04`, user `runner`, dan alur otorisasi web yang
+sama. Pilih salah satu workflow saat menjalankan Actions.
 
 ---
 
@@ -119,7 +133,7 @@ repo hasil fork.
 ### 3. Jalankan workflow (tanpa input auth)
 
 1. Buka tab **Actions** di fork Anda.
-2. Pilih **GNOME 26** di sidebar kiri.
+2. Pilih **GNOME 26** atau **Cinnamon 26** di sidebar kiri.
 3. Klik **Run workflow** (kanan atas).
 4. Biarkan kolom **crd_host_command** **kosong** — kolom itu hanya fallback.
 5. Klik **Run workflow** (hijau).
@@ -170,25 +184,26 @@ Setelah log menunjukkan:
 [OK] CHROME REMOTE DESKTOP READY
 ```
 
-buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**,
-lalu masukkan PIN.
+buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
+(workflow GNOME) atau **cinnamon** (workflow Cinnamon), lalu masukkan PIN.
 
 | | |
 |---|---|
 | **User** | `runner` (password: `root`) |
 | **PIN** | `123456` (atau secret `CRD_PIN` Anda) |
-| **Device** | `gnome` |
+| **Device** | `gnome` / `cinnamon` (sesuai workflow) |
 | **Durasi** | sampai ±6 jam, lalu VM dimatikan otomatis |
 
-> Workflow lama **`gnome.yml`** (RICH LINUX, Ubuntu 24.04) masih tersedia dan
-> memakai alur lama: ambil perintah CRD **sebelum** run, lalu paste ke input
-> `crd_host_command`. Untuk alur terbaru, gunakan **GNOME 26**.
+> Workflow lama **`gnome.yml`** (RICH LINUX, Ubuntu 24.04) memakai alur lama:
+> ambil perintah CRD **sebelum** run, lalu paste ke input `crd_host_command`.
+> Untuk alur terbaru, gunakan **GNOME 26** atau **Cinnamon 26**.
 
 ---
 
 ## Setelah terhubung
 
-- **Terminal:** tekan <kbd>Super</kbd> → cari *Terminal*, atau icon di dash.
+- **Terminal:** tekan <kbd>Super</kbd> → cari *Terminal*, atau icon di panel/dash.
+- **File manager:** Nautilus di GNOME, **Nemo** di Cinnamon.
 - **Upgrade paket dengan aman:**
 
   ```bash
@@ -198,10 +213,11 @@ lalu masukkan PIN.
   Ada juga shortcut **Safe Upgrade** di Desktop. **Jangan** pakai
   `sudo apt upgrade -y` polos — itu bisa me-restart Chrome Remote Desktop dan
   memutus sesi Anda.
-- **Menjalankan VM (KVM):** `virt-manager` atau **GNOME Boxes**. Runner x86
-  punya KVM, jadi VM berjalan dengan akselerasi hardware.
-- **Theme:** Catppuccin Macchiato (Mauve) sudah aktif. Ganti via **Tweaks** →
-  Appearance kalau ingin variasi lain.
+- **Menjalankan VM (KVM):** `virt-manager` (kedua varian), atau **GNOME Boxes**
+  di varian GNOME. Runner x86 punya KVM, jadi VM berjalan dengan akselerasi hardware.
+- **Theme:** Catppuccin Macchiato (Mauve) sudah aktif. Di Cinnamon, ganti lewat
+  **Themes** → *Desktop*; kalau `cinnamon.css` bermasalah, kembalikan tema bawaan
+  dengan `gsettings set org.cinnamon.theme name ''`.
 
 ---
 
@@ -249,7 +265,9 @@ lalu masukkan PIN.
 | Device tidak muncul di daftar Remote Access | Tunggu sampai log `[OK] CHROME REMOTE DESKTOP READY` muncul. Kalau masih tidak ada, refresh halaman dan cek service: `systemctl status chrome-remote-desktop@runner`. |
 | Sesi terputus saat update paket | Anda memakai `apt upgrade` polos. Pakai `sudo safe-upgrade`. |
 | Resolusi aneh / layar kecil | Dikunci ke `1024x768` (mode native driver `dummy`). Ubah lewat *Settings → Displays* bila perlu. |
-| `virt-manager`: "Permission denied" pada libvirt | Log-out lalu log-in ulang di sesi GNOME, atau jalankan VM lewat GNOME Boxes. |
+| `virt-manager`: "Permission denied" pada libvirt | Log-out lalu log-in ulang di sesi desktop, atau jalankan VM lewat GNOME Boxes (varian GNOME). |
+| Cinnamon: layar hitam setelah connect | Coba fallback `cinnamon2d`: ubah baris `exec` di `~/.chrome-remote-desktop-session` menjadi `exec /usr/bin/cinnamon-session --session cinnamon2d`, lalu restart `chrome-remote-desktop@runner`. |
+| Cinnamon: animasi tidak jalan | Normal pada sesi CRD: Cinnamon 6.4 mematikan efek saat mendeteksi software rendering (llvmpipe). Tidak ada override seperti `force_animations` di GNOME Shell. |
 | `Cannot access KVM` | KVM tersedia di runner x86. Cek `ls -l /dev/kvm`; jika ada tapi tetap gagal, tulis issue dengan log run. |
 
 Panduan lengkap: [`docs/troubleshooting.md`](docs/troubleshooting.md) ·
@@ -264,7 +282,8 @@ Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots
 .
 ├── .github/
 │   ├── workflows/
-│   │   ├── gnome26.yml          # workflow utama (form otorisasi web)
+│   │   ├── gnome26.yml          # workflow utama GNOME (form otorisasi web)
+│   │   ├── cinnamon.yml         # workflow Cinnamon 26 (X11, device 'cinnamon')
 │   │   ├── gnome.yml            # workflow lama (input command di awal)
 │   │   └── lint.yml             # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/

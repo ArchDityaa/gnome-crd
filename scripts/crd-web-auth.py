@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Server web kecil untuk menerima perintah otorisasi Chrome Remote Desktop.
 
-Dipakai oleh `.github/workflows/gnome26.yml` (STEP 17). Workflow menjalankan
-server ini di 127.0.0.1, lalu mengeksposnya lewat Cloudflare quick tunnel.
+Dipakai oleh `.github/workflows/gnome26.yml` dan `.github/workflows/cinnamon.yml`
+(STEP 17). Workflow menjalankan server ini di 127.0.0.1, lalu mengeksposnya
+lewat Cloudflare quick tunnel.
 User membuka URL publik, meng-*authorize* akun Google di halaman headless CRD,
 lalu mem-paste perintah `start-host` ke form. Perintah disimpan ke file dan
 diproses oleh workflow.
@@ -22,6 +23,8 @@ Environment:
     CRD_WEB_STATE   direktori state (default: /tmp/crd-web-auth)
     CRD_WEB_PORT    port lokal (default: 8787)
     CRD_WEB_BIND    alamat bind (default: 127.0.0.1)
+    CRD_WEB_DESKTOP nama desktop di halaman form (default: GNOME)
+    CRD_WEB_DEVICE  nama device CRD yang tampil (default: gnome)
 
 Hanya memakai standard library Python 3 (tidak perlu pip/venv).
 """
@@ -29,6 +32,7 @@ Hanya memakai standard library Python 3 (tidak perlu pip/venv).
 from __future__ import annotations
 
 import hmac
+import html
 import json
 import os
 import re
@@ -43,6 +47,8 @@ STATE_DIR = os.environ.get("CRD_WEB_STATE", "/tmp/crd-web-auth")
 TOKEN = os.environ.get("CRD_WEB_TOKEN", "")
 PORT = int(os.environ.get("CRD_WEB_PORT", "8787"))
 BIND = os.environ.get("CRD_WEB_BIND", "127.0.0.1")
+DESKTOP_NAME = os.environ.get("CRD_WEB_DESKTOP", "GNOME")
+DEVICE_NAME = os.environ.get("CRD_WEB_DEVICE", "gnome")
 
 COMMAND_FILE = os.path.join(STATE_DIR, "command")
 PROCESSING_FILE = os.path.join(STATE_DIR, "command.processing")
@@ -129,7 +135,8 @@ def normalize_command(raw: str) -> tuple[str | None, str | None]:
         return None, "Perintah terlalu panjang (maksimal 4096 byte)."
 
     # Buang --name=... (termasuk bentuk --name=$(hostname)). Workflow akan
-    # menambahkan --name="gnome" sendiri supaya device selalu tampil "gnome".
+    # menambahkan --name sendiri (mis. "gnome"/"cinnamon") supaya device
+    # selalu tampil dengan nama yang konsisten.
     command = re.sub(r'--name=(?:"[^"]*"|\S+)', "", command).strip()
 
     if "\n" in command or "\r" in command:
@@ -224,7 +231,7 @@ PAGE_TEMPLATE = """<!doctype html>
 <div class="wrap">
   <h1>🔐 Otorisasi Chrome Remote Desktop</h1>
   <p class="lead">
-    Desktop GNOME sudah siap. Tinggal menghubungkan perangkat ke akun Google Anda.
+    Desktop __DESKTOP__ sudah siap. Tinggal menghubungkan perangkat ke akun Google Anda.
     <span id="countdown"></span>
   </p>
 
@@ -241,7 +248,7 @@ PAGE_TEMPLATE = """<!doctype html>
       <li>Paste perintah itu ke kotak di bawah, lalu klik <strong>Kirim &amp; Daftarkan</strong>.</li>
       <li>Tunggu sampai status berubah menjadi <strong>Berhasil</strong>, lalu buka
         <a href="https://remotedesktop.google.com/access" target="_blank" rel="noreferrer noopener">
-          Remote Access</a> dan pilih device <code>gnome</code>.</li>
+          Remote Access</a> dan pilih device <code>__DEVICE__</code>.</li>
     </ol>
     <p class="detail" style="margin-bottom:0">
       Kode <code>--code=...</code> bersifat <strong>sekali pakai</strong>. Jangan
@@ -264,7 +271,7 @@ PAGE_TEMPLATE = """<!doctype html>
       <div id="success-extra" hidden>
         <p style="margin-bottom:0">
           Buka <a href="https://remotedesktop.google.com/access" target="_blank" rel="noreferrer noopener">
-          remotedesktop.google.com/access</a>, pilih device <strong>gnome</strong>,
+          remotedesktop.google.com/access</a>, pilih device <strong>__DEVICE__</strong>,
           lalu masukkan PIN Anda.
         </p>
       </div>
@@ -363,7 +370,12 @@ PAGE_TEMPLATE = """<!doctype html>
 
 
 def _page() -> bytes:
-    return PAGE_TEMPLATE.replace("__TOKEN_JSON__", json.dumps(TOKEN)).encode("utf-8")
+    return (
+        PAGE_TEMPLATE
+        .replace("__TOKEN_JSON__", json.dumps(TOKEN))
+        .replace("__DESKTOP__", html.escape(DESKTOP_NAME))
+        .replace("__DEVICE__", html.escape(DEVICE_NAME))
+    ).encode("utf-8")
 
 
 class Handler(BaseHTTPRequestHandler):

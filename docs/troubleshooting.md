@@ -1,7 +1,7 @@
 # Troubleshooting
 
 Panduan lengkap untuk masalah yang paling sering muncul saat menjalankan
-**GNOME 26 (GNOME + Chrome Remote Desktop)**.
+**GNOME 26** atau **Cinnamon 26** (desktop + Chrome Remote Desktop).
 
 > **Jangan pernah paste** URL form (mengandung token), isi `crd_host_command`,
 > kode OAuth (`--code=...`), atau PIN Anda ke issue/log publik. Cukup potongan
@@ -121,8 +121,8 @@ Cache `.deb` sudah tersimpan sebelum registrasi, jadi re-run jauh lebih cepat.
    sudo systemctl start chrome-remote-desktop@runner
    ```
 
-Nama device yang muncul adalah **gnome** (di-override di workflow), bukan
-hostname runner.
+Nama device yang muncul adalah **gnome** (workflow GNOME 26) atau **cinnamon**
+(workflow Cinnamon 26), bukan hostname runner. Keduanya di-override di workflow.
 
 ---
 
@@ -139,8 +139,8 @@ hostname runner.
 ## 6. Sesi putus tiba-tiba
 
 **Penyebab paling umum:** menjalankan `sudo apt upgrade -y` polos di dalam sesi.
-Itu me-restart `chrome-remote-desktop@runner`, `gnome-shell`, atau systemd,
-sehingga koneksi terputus.
+Itu me-restart `chrome-remote-desktop@runner`, `gnome-shell`/`cinnamon`, atau
+systemd, sehingga koneksi terputus.
 
 **Solusi:** selalu pakai:
 
@@ -187,14 +187,14 @@ Workflow mengunci resolusi ke **1024x768**, yang merupakan mode native driver
 
 Sesi Anda mungkin dijalankan sebelum `runner` masuk grup `libvirt`/`kvm`.
 
-1. Log out lalu login kembali di sesi GNOME (keluar dan masuk lagi), atau
+1. Log out lalu login kembali di sesi desktop (keluar dan masuk lagi), atau
 2. `sudo systemctl restart chrome-remote-desktop@runner` (dari terminal; sesi
    akan terputus lalu sambung lagi).
 
 **"Cannot access KVM" / VM sangat lambat:**
 
-Runner x86 **`ubuntu-26.04`** (workflow `gnome26.yml`) punya `/dev/kvm`. Workflow
-lama `gnome.yml` memakai `ubuntu-24.04`. Cek:
+Runner x86 **`ubuntu-26.04`** (workflow `gnome26.yml` dan `cinnamon.yml`) punya
+`/dev/kvm`. Workflow lama `gnome.yml` memakai `ubuntu-24.04`. Cek:
 
 ```bash
 ls -l /dev/kvm      # harus ada
@@ -216,7 +216,11 @@ default:
 - Aplikasi perlu **di-restart** setelah tema dipasang.
 - Beberapa app libadwaita butuh override di `~/.config/gtk-4.0` (sudah disiapkan
   workflow). Cek: `ls ~/.config/gtk-4.0/gtk.css`.
-- Ganti flavor lewat **Tweaks → Appearance** untuk perubahan cepat.
+- Di GNOME, ganti flavor lewat **Tweaks → Appearance**.
+- Di Cinnamon, ganti lewat **Themes → Desktop**. Tema shell Cinnamon dibaca dari
+  `~/.themes/<nama>/cinnamon/cinnamon.css`. Kalau CSS Catppuccin tidak kompatibel
+  dengan Cinnamon 6.4, kembalikan tema bawaan:
+  `gsettings set org.cinnamon.theme name ''`.
 
 ---
 
@@ -240,7 +244,7 @@ default:
 | Cache `.deb` | kosong (unduh ~GB) | terpakai |
 | Perkiraan waktu | 20–40 menit | jauh lebih cepat |
 
-Untuk workflow **GNOME 26**:
+Untuk workflow **GNOME 26** dan **Cinnamon 26**:
 
 - Registrasi gagal karena kode auth → **tidak perlu re-run**; ambil kode baru
   dan submit lagi di form selama window 30 menit.
@@ -250,3 +254,40 @@ Untuk workflow lama **`gnome.yml`**:
 
 - Registrasi gagal → ambil perintah CRD baru, lalu **Re-run** dan paste ke input
   `crd_host_command`.
+
+---
+
+## 13. Khusus Cinnamon: layar hitam, animasi, dan session
+
+**Layar hitam setelah connect.** Coba sesi `cinnamon2d` (software rendering
+eksplisit):
+
+```bash
+# di dalam sesi/terminal runner
+sed -i 's#exec /usr/bin/cinnamon-session --session cinnamon#exec /usr/bin/cinnamon-session --session cinnamon2d#' \
+  ~/.chrome-remote-desktop-session
+sudo systemctl restart chrome-remote-desktop@runner
+```
+
+Kalau masih hitam, cek log CRD:
+
+```bash
+journalctl -u chrome-remote-desktop@runner -n 100 --no-pager
+```
+
+**Animasi tidak berjalan.** Ini normal. Cinnamon 6.4 menonaktifkan animasi saat
+mendeteksi software rendering (llvmpipe), dan tidak menyediakan override seperti
+`global.force_animations` di GNOME Shell. Setting `enable-animations` dan
+`desktop-effects` tetap `true`, tetapi efek bisa di-skip oleh Cinnamon.
+
+**Tidak ada layar login / lightdm.** Memang disengaja: workflow memasang Cinnamon
+tanpa `cinnamon-core`/`lightdm`/`slick-greeter`, karena CRD memanggil
+`cinnamon-session` langsung. Jangan instal `lightdm` di sesi ini.
+
+**Cek sesi yang aktif:**
+
+```bash
+echo "$XDG_CURRENT_DESKTOP"   # X-Cinnamon
+echo "$DESKTOP_SESSION"       # cinnamon
+pgrep -a cinnamon-session
+```

@@ -1,5 +1,5 @@
 name: Bug report
-description: Laporkan masalah pada workflow GNOME 26 (GNOME + CRD)
+description: Laporkan masalah pada workflow GNOME 26 / Cinnamon 26 (desktop + CRD)
 title: "[Bug] "
 labels: ["bug"]
 body:
@@ -9,6 +9,17 @@ body:
         Terima kasih sudah melapor. **Jangan pernah paste** URL form otorisasi
         (mengandung token), isi `crd_host_command`, kode OAuth (`--code=...`),
         atau PIN Anda. Cukup tempelkan potongan LOG yang relevan.
+
+  - type: dropdown
+    id: desktop
+    attributes:
+      label: Varian desktop
+      options:
+        - GNOME 26 (gnome26.yml)
+        - Cinnamon 26 (cinnamon.yml)
+        - Workflow lama gnome.yml
+    validations:
+      required: true
 
   - type: dropdown
     id: where

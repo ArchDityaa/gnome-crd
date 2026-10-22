@@ -7,6 +7,10 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Added
 
+- `.github/workflows/cinnamon.yml` — varian **Cinnamon 26** di runner
+  `ubuntu-26.04`: Cinnamon 6.4 X11 + Muffin + Nemo (tanpa lightdm/slick-greeter),
+  sesi CRD `cinnamon-session`, screensaver/lock off, Catppuccin (GTK + Cinnamon
+  shell), Nemo/Terminal shortcuts, device CRD `cinnamon`, dan keep-alive 6 jam.
 - `scripts/crd-web-auth.py` — server form otorisasi Chrome Remote Desktop
   berbasis Python stdlib. URL memakai token acak 128-bit, server hanya bind ke
   `127.0.0.1`, perintah divalidasi ketat, status ditampilkan live, dan hanya
@@ -37,6 +41,13 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   sebagai legacy.
 - `docs/troubleshooting.md`: tambah bagian form web/Cloudflare, registrasi gagal
   tanpa re-run, window 30 menit, dan update runner 26.04.
+- `scripts/crd-web-auth.py`: branding desktop dan nama device sekarang dapat
+  dikonfigurasi lewat `CRD_WEB_DESKTOP` / `CRD_WEB_DEVICE` (default tetap
+  `GNOME`/`gnome`), dengan escaping HTML.
+- README (ID & EN): tambah varian **Cinnamon 26**, tabel perbandingan GNOME vs
+  Cinnamon, device `cinnamon`, dan catatan animasi software rendering.
+- `docs/faq.md` dan `docs/troubleshooting.md`: tambah Q&A serta bagian khusus
+  Cinnamon (fallback `cinnamon2d`, animasi, tanpa lightdm).
 - `docs/faq.md`: tambah Q&A tentang kode auth setelah desktop siap, retry tanpa
   re-run, Cloudflare quick tunnel, keamanan URL form, dan perbedaan
   `gnome26.yml` vs `gnome.yml`.

@@ -29,13 +29,13 @@ Good for:
 flowchart LR
   A[Fork repo] --> B[Enable Actions]
   B --> C[Run workflow<br/>no auth input]
-  C --> D[ubuntu-26.04 runner<br/>installs GNOME, Chrome, VS Code, theme]
+  C --> D[ubuntu-26.04 runner<br/>installs GNOME or Cinnamon, Chrome, VS Code, theme]
   D --> E[Workflow shows form URL<br/>Cloudflare quick tunnel]
   E --> F[Open URL and authorize<br/>at remotedesktop.google.com/headless]
   F --> G[Paste Debian command<br/>into the web form]
-  G --> H[Device 'gnome' registered]
+  G --> H[Device 'gnome' / 'cinnamon' registered]
   H --> I[Connect from browser<br/>remotedesktop.google.com/access]
-  I --> J[GNOME desktop<br/>up to 6 hours]
+  I --> J[GNOME / Cinnamon desktop<br/>up to 6 hours]
 ```
 
 > **Important:** you no longer get the Chrome Remote Desktop auth code at the
@@ -48,23 +48,36 @@ flowchart LR
 ## What you get
 
 One **Ubuntu 26.04** virtual machine (4 vCPU / 16 GB RAM) with a pre-configured
-GNOME desktop, alive for up to **6 hours**, then it shuts down automatically.
-Every run is a clean environment — when it ends, it's gone.
+**GNOME** or **Cinnamon** desktop, alive for up to **6 hours**, then it shuts
+down automatically. Every run is a clean environment — when it ends, it's gone.
 
 | Pre-installed | Notes |
 |---|---|
-| **GNOME Desktop** | Full `ubuntu` GNOME session (not XFCE) |
+| **GNOME Desktop** | Full `ubuntu` GNOME session (not XFCE) — `GNOME 26` workflow |
+| **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — `Cinnamon 26` workflow |
 | **Google Chrome** | Ready to sign in to your Google account |
 | **VS Code** | `code` |
 | **OpenCode CLI + Desktop** | CLI at `/usr/local/bin/opencode`, plus the desktop app |
 | **Chrome Remote Desktop** | The main access path |
-| **virt-manager + GNOME Boxes + libvirt/QEMU** | For running VMs inside (nested) |
-| **Catppuccin Macchiato + Mauve** | GTK/Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font |
+| **virt-manager + libvirt/QEMU** | For running VMs inside (nested). GNOME also includes GNOME Boxes |
+| **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font |
 | **safe-upgrade** | A drop-in replacement for `apt upgrade` that won't kill your session |
 
-Plus: timezone **Asia/Jakarta (WIB)**, screensaver & lock disabled, GNOME
-animations enabled on software rendering, Catppuccin wallpaper, and desktop
-shortcuts.
+Plus: timezone **Asia/Jakarta (WIB)**, screensaver & lock disabled, Catppuccin
+wallpaper, and desktop shortcuts.
+
+### Desktop variants
+
+| | **GNOME 26** | **Cinnamon 26** |
+|---|---|---|
+| Workflow | `.github/workflows/gnome26.yml` | `.github/workflows/cinnamon.yml` |
+| Desktop | GNOME (`ubuntu` session) | Cinnamon 6.4 (`cinnamon` session, X11) |
+| CRD device | `gnome` | `cinnamon` |
+| File manager | Nautilus | Nemo |
+| Note | Animations forced on via an extension | Animations may stay off because Cinnamon disables effects under software rendering (llvmpipe) |
+
+Both use the `ubuntu-26.04` runner, user `runner`, and the same web authorization
+flow. Pick either workflow when you run Actions.
 
 ---
 
@@ -120,7 +133,7 @@ Click **Fork** (top right) → **Create fork**.
 ### 3. Run the workflow (no auth input)
 
 1. Open the **Actions** tab in your fork.
-2. Select **GNOME 26** in the left sidebar.
+2. Select **GNOME 26** or **Cinnamon 26** in the left sidebar.
 3. Click **Run workflow** (top right).
 4. Leave **crd_host_command** **empty** — it is only a fallback.
 5. Click the green **Run workflow**.
@@ -170,25 +183,26 @@ Once the log shows:
 [OK] CHROME REMOTE DESKTOP READY
 ```
 
-open <https://remotedesktop.google.com/access>, pick the device named **gnome**,
-and enter the PIN.
+open <https://remotedesktop.google.com/access>, pick the device named **gnome**
+(GNOME workflow) or **cinnamon** (Cinnamon workflow), and enter the PIN.
 
 | | |
 |---|---|
 | **User** | `runner` (password: `root`) |
 | **PIN** | `123456` (or your `CRD_PIN` secret) |
-| **Device** | `gnome` |
+| **Device** | `gnome` / `cinnamon` (depending on the workflow) |
 | **Duration** | up to ~6 hours, then the VM is shut down automatically |
 
-> The legacy **`gnome.yml`** workflow (RICH LINUX, Ubuntu 24.04) is still
-> available and uses the old flow: get the CRD command **before** running, then
-> paste it into `crd_host_command`. For the latest flow, use **GNOME 26**.
+> The legacy **`gnome.yml`** workflow (RICH LINUX, Ubuntu 24.04) uses the old
+> flow: get the CRD command **before** running, then paste it into
+> `crd_host_command`. For the latest flow, use **GNOME 26** or **Cinnamon 26**.
 
 ---
 
 ## After you connect
 
-- **Terminal:** press <kbd>Super</kbd> → search *Terminal*, or use the dash icon.
+- **Terminal:** press <kbd>Super</kbd> → search *Terminal*, or use the panel/dash icon.
+- **File manager:** Nautilus on GNOME, **Nemo** on Cinnamon.
 - **Upgrade packages safely:**
 
   ```bash
@@ -198,10 +212,11 @@ and enter the PIN.
   There is also a **Safe Upgrade** shortcut on the Desktop. **Do not** run plain
   `sudo apt upgrade -y` — it can restart Chrome Remote Desktop and drop your
   session.
-- **Run VMs (KVM):** use `virt-manager` or **GNOME Boxes**. x86 runners have
-  KVM, so VMs run with hardware acceleration.
-- **Theme:** Catppuccin Macchiato (Mauve) is already active. Change flavors via
-  **Tweaks** → Appearance.
+- **Run VMs (KVM):** use `virt-manager` (both variants), or **GNOME Boxes** on
+  GNOME. x86 runners have KVM, so VMs run with hardware acceleration.
+- **Theme:** Catppuccin Macchiato (Mauve) is already active. On Cinnamon, change
+  it via **Themes** → *Desktop*; if `cinnamon.css` misbehaves, restore the
+  built-in theme with `gsettings set org.cinnamon.theme name ''`.
 
 ---
 
@@ -249,7 +264,9 @@ and enter the PIN.
 | Device not shown in Remote Access | Wait until the log shows `[OK] CHROME REMOTE DESKTOP READY`. If it's still missing, refresh the page and check `systemctl status chrome-remote-desktop@runner`. |
 | Session drops while updating packages | You used plain `apt upgrade`. Use `sudo safe-upgrade`. |
 | Odd resolution / small screen | Locked to `1024x768` (native `dummy` driver mode). Adjust via *Settings → Displays*. |
-| `virt-manager`: libvirt "Permission denied" | Log out and back in to the GNOME session, or run VMs via GNOME Boxes. |
+| `virt-manager`: libvirt "Permission denied" | Log out and back in to the desktop session, or run VMs via GNOME Boxes (GNOME variant). |
+| Cinnamon: black screen after connecting | Try the `cinnamon2d` fallback: change the `exec` line in `~/.chrome-remote-desktop-session` to `exec /usr/bin/cinnamon-session --session cinnamon2d`, then restart `chrome-remote-desktop@runner`. |
+| Cinnamon: animations don't run | Expected in the CRD session: Cinnamon 6.4 disables effects when it detects software rendering (llvmpipe). There is no `force_animations` override like GNOME Shell has. |
 | `Cannot access KVM` | KVM is available on x86 runners. Check `ls -l /dev/kvm`; if it exists but still fails, open an issue with the run log. |
 
 Full guide: [`docs/troubleshooting.md`](docs/troubleshooting.md) ·
@@ -264,7 +281,8 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 .
 ├── .github/
 │   ├── workflows/
-│   │   ├── gnome26.yml          # main workflow (web auth form)
+│   │   ├── gnome26.yml          # main GNOME workflow (web auth form)
+│   │   ├── cinnamon.yml         # Cinnamon 26 workflow (X11, device 'cinnamon')
 │   │   ├── gnome.yml            # legacy workflow (command at start)
 │   │   └── lint.yml             # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/
