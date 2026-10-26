@@ -18,7 +18,7 @@ Connect from your browser via Chrome Remote Desktop — nothing to install local
 
 [Versi Bahasa Indonesia →](README.md)
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Good for](#good-for)
 - [At a glance](#at-a-glance)
@@ -77,22 +77,22 @@ down automatically. Every run is a clean environment — when it ends, it's gone
 
 | Pre-installed | Notes |
 |---|---|
-| 🖥️ **GNOME Desktop** | Full `ubuntu` GNOME session (not XFCE) — `GNOME 26` workflow |
-| 🍄 **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — `Cinnamon 26` workflow |
-| 🌐 **Google Chrome** | Ready to sign in to your Google account |
-| 💻 **VS Code** | `code` |
-| 💡 **OpenCode CLI + Desktop** | CLI at `/usr/local/bin/opencode`, plus the desktop app |
-| 🔗 **Chrome Remote Desktop** | The main access path |
-| 🖥️ **virt-manager + libvirt/QEMU** | For running VMs inside (nested). GNOME also includes GNOME Boxes |
-| 🎨 **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font |
-| 🔒 **safe-upgrade** | A drop-in replacement for `apt upgrade` that won't kill your session |
+| **GNOME Desktop** | Full `ubuntu` GNOME session (not XFCE) — `GNOME 26` workflow |
+| **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — `Cinnamon 26` workflow |
+| **Google Chrome** | Ready to sign in to your Google account |
+| **VS Code** | `code` |
+| **OpenCode CLI + Desktop** | CLI at `/usr/local/bin/opencode`, plus the desktop app |
+| **Chrome Remote Desktop** | The main access path |
+| **virt-manager + libvirt/QEMU** | For running VMs inside (nested). GNOME also includes GNOME Boxes |
+| **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font |
+| **safe-upgrade** | A drop-in replacement for `apt upgrade` that won't kill your session |
 
 Plus: timezone **Asia/Jakarta (WIB)**, screensaver & lock disabled, Catppuccin
 wallpaper, and desktop shortcuts.
 
 ### Desktop variants
 
-| | **🖥️ GNOME 26** | **🍄 Cinnamon 26** |
+| | **GNOME 26** | **Cinnamon 26** |
 |---|---|---|
 | Workflow | `.github/workflows/gnome26.yml` | `.github/workflows/cinnamon.yml` |
 | Desktop | GNOME (`ubuntu` session) | Cinnamon 6.4 (`cinnamon` session, X11) |
@@ -130,18 +130,18 @@ No credit card, no server, no self-hosted runner.
 
 ## Usage (5 steps)
 
-### 🍴 1. Fork this repository
+### 1. Fork this repository
 
 Click **Fork** (top right) → **Create fork**.
 
-### ⚙️ 2. Enable Actions on your fork
+### 2. Enable Actions on your fork
 
 **This is the step people most often miss.** GitHub disables workflows on forks.
 
 > **Settings** → **Actions** → **General** → select **Allow all actions and
 > reusable workflows** → **Save**.
 
-### 🚀 3. Run the workflow (no auth input)
+### 3. Run the workflow (no auth input)
 
 1. Open the **Actions** tab in your fork.
 2. Select **GNOME 26** or **Cinnamon 26** in the left sidebar.
@@ -153,7 +153,7 @@ Click **Fork** (top right) → **Create fork**.
 **Settings → Secrets and variables → Actions → New repository secret**
 (value: at least 6 digits). If unset, the default PIN is `123456`.
 
-### 🔐 4. Open the auth form and authorize
+### 4. Open the auth form and authorize
 
 After installation finishes (**~20–40 minutes**), the log shows:
 
@@ -194,7 +194,7 @@ preferences (`crd.lang`, `crd.theme`) are saved in `localStorage`.
 > **Do not share the form URL.** It contains a random token and acts as a
 > temporary credential for about 30 minutes.
 
-### 🔗 5. Wait & connect
+### 5. Wait & connect
 
 Once the log shows:
 
@@ -220,9 +220,9 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
 
 ## After you connect
 
-- 🖥️ **Terminal:** press <kbd>Super</kbd> → search *Terminal*, or use the panel/dash icon.
-- 📁 **File manager:** Nautilus on GNOME, **Nemo** on Cinnamon.
-- 🔒 **Upgrade packages safely:**
+- **Terminal:** press <kbd>Super</kbd> → search *Terminal*, or use the panel/dash icon.
+- **File manager:** Nautilus on GNOME, **Nemo** on Cinnamon.
+- **Upgrade packages safely:**
 
   ```bash
   sudo safe-upgrade
@@ -231,15 +231,15 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
   There is also a **Safe Upgrade** shortcut on the Desktop. **Do not** run plain
   `sudo apt upgrade -y` — it can restart Chrome Remote Desktop and drop your
   session.
-- 🖥️ **Run VMs (KVM):** use `virt-manager` (both variants), or **GNOME Boxes** on
+- **Run VMs (KVM):** use `virt-manager` (both variants), or **GNOME Boxes** on
   GNOME. x86 runners have KVM, so VMs run with hardware acceleration.
-- 🎨 **Theme:** Catppuccin Macchiato (Mauve) is already active. On Cinnamon, change
+- **Theme:** Catppuccin Macchiato (Mauve) is already active. On Cinnamon, change
   it via **Themes** → *Desktop*; if `cinnamon.css` misbehaves, restore the
   built-in theme with `gsettings set org.cinnamon.theme name ''`.
 
 ---
 
-> ⚠️ **Important Security Notice**
+> ⚠ **Important Security Notice**
 >
 > The authorization form URL contains a **random 128-bit token** that acts as a
 > temporary credential for about 30 minutes. Anyone who opens that URL during

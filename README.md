@@ -18,7 +18,7 @@ Akses dari browser lewat Chrome Remote Desktop — tanpa install apa pun di komp
 
 [English version →](README.en.md)
 
-## 📋 Daftar Isi
+## Daftar Isi
 
 - [Cocok untuk](#cocok-untuk)
 - [Alur singkat](#alur-singkat)
@@ -76,22 +76,22 @@ lalu otomatis mati. Setiap run adalah lingkungan bersih — selesai, hilang.
 
 | Sudah Terpasang | Keterangan |
 |---|---|
-| 🖥️ **GNOME Desktop** | Sesi penuh (`ubuntu` GNOME session), bukan XFCE — workflow `GNOME 26` |
-| 🍄 **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — workflow `Cinnamon 26` |
-| 🌐 **Google Chrome** | Bisa langsung dipakai login akun Google |
-| 💻 **VS Code** | `code` |
-| 💡 **OpenCode CLI + Desktop** | CLI di `/usr/local/bin/opencode`, plus app desktop |
-| 🔗 **Chrome Remote Desktop** | Jalur akses utamanya |
-| 🖥️ **virt-manager + libvirt/QEMU** | Untuk menjalankan VM di dalamnya (nested). GNOME juga menyertakan GNOME Boxes |
-| 🎨 **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font |
-| 🔒 **safe-upgrade** | Pengganti `apt upgrade` yang tidak memutus sesi |
+| **GNOME Desktop** | Sesi penuh (`ubuntu` GNOME session), bukan XFCE — workflow `GNOME 26` |
+| **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — workflow `Cinnamon 26` |
+| **Google Chrome** | Bisa langsung dipakai login akun Google |
+| **VS Code** | `code` |
+| **OpenCode CLI + Desktop** | CLI di `/usr/local/bin/opencode`, plus app desktop |
+| **Chrome Remote Desktop** | Jalur akses utamanya |
+| **virt-manager + libvirt/QEMU** | Untuk menjalankan VM di dalamnya (nested). GNOME juga menyertakan GNOME Boxes |
+| **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font |
+| **safe-upgrade** | Pengganti `apt upgrade` yang tidak memutus sesi |
 
 Plus: timezone **WIB (Asia/Jakarta)**, screensaver & lock dimatikan, wallpaper
 Catppuccin, dan shortcut di Desktop.
 
 ### Varian desktop
 
-| | **🖥️ GNOME 26** | **🍄 Cinnamon 26** |
+| | **GNOME 26** | **Cinnamon 26** |
 |---|---|---|
 | Workflow | `.github/workflows/gnome26.yml` | `.github/workflows/cinnamon.yml` |
 | Desktop | GNOME (sesi `ubuntu`) | Cinnamon 6.4 (sesi `cinnamon`, X11) |
@@ -129,11 +129,11 @@ Tidak perlu kartu kredit, tidak perlu server, tidak perlu self-hosted runner.
 
 ## Cara pakai (5 langkah)
 
-### 🍴 1. Fork repo ini
+### 1. Fork repo ini
 
 Klik tombol **Fork** di kanan atas → **Create fork**.
 
-### ⚙️ 2. Aktifkan Actions di fork Anda
+### 2. Aktifkan Actions di fork Anda
 
 **Ini langkah yang paling sering terlewat.** GitHub menonaktifkan workflow pada
 repo hasil fork.
@@ -141,7 +141,7 @@ repo hasil fork.
 > **Settings** → **Actions** → **General** → pilih **Allow all actions and reusable
 > workflows** → **Save**.
 
-### 🚀 3. Jalankan workflow (tanpa input auth)
+### 3. Jalankan workflow (tanpa input auth)
 
 1. Buka tab **Actions** di fork Anda.
 2. Pilih **GNOME 26** atau **Cinnamon 26** di sidebar kiri.
@@ -153,7 +153,7 @@ repo hasil fork.
 **Settings → Secrets and variables → Actions → New repository secret**
 (nilai: minimal 6 digit). Kalau tidak diisi, PIN default `123456`.
 
-### 🔐 4. Buka form otorisasi & authorize
+### 4. Buka form otorisasi & authorize
 
 Setelah instalasi selesai (**±20–40 menit**), log akan menampilkan:
 
@@ -195,7 +195,7 @@ preferensi bahasa/tema (`crd.lang`, `crd.theme`) yang disimpan di `localStorage`
 > **Jangan bagikan URL form.** URL itu mengandung token acak dan berlaku sebagai
 > kredensial sementara selama ±30 menit.
 
-### 🔗 5. Tunggu & connect
+### 5. Tunggu & connect
 
 Setelah log menunjukkan:
 
@@ -221,9 +221,9 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 
 ## Setelah terhubung
 
-- 🖥️ **Terminal:** tekan <kbd>Super</kbd> → cari *Terminal*, atau icon di panel/dash.
-- 📁 **File manager:** Nautilus di GNOME, **Nemo** di Cinnamon.
-- 🔒 **Upgrade paket dengan aman:**
+- **Terminal:** tekan <kbd>Super</kbd> → cari *Terminal*, atau icon di panel/dash.
+- **File manager:** Nautilus di GNOME, **Nemo** di Cinnamon.
+- **Upgrade paket dengan aman:**
 
   ```bash
   sudo safe-upgrade
@@ -232,15 +232,15 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
   Ada juga shortcut **Safe Upgrade** di Desktop. **Jangan** pakai
   `sudo apt upgrade -y` polos — itu bisa me-restart Chrome Remote Desktop dan
   memutus sesi Anda.
-- 🖥️ **Menjalankan VM (KVM):** `virt-manager` (kedua varian), atau **GNOME Boxes**
+- **Menjalankan VM (KVM):** `virt-manager` (kedua varian), atau **GNOME Boxes**
   di varian GNOME. Runner x86 punya KVM, jadi VM berjalan dengan akselerasi hardware.
-- 🎨 **Theme:** Catppuccin Macchiato (Mauve) sudah aktif. Di Cinnamon, ganti lewat
+- **Theme:** Catppuccin Macchiato (Mauve) sudah aktif. Di Cinnamon, ganti lewat
   **Themes** → *Desktop*; kalau `cinnamon.css` bermasalah, kembalikan tema bawaan
   dengan `gsettings set org.cinnamon.theme name ''`.
 
 ---
 
-> ⚠️ **Peringatan Keamanan Penting**
+> ⚠ **Peringatan Keamanan Penting**
 >
 > URL form otorisasi mengandung **token acak 128-bit** yang berlaku sebagai
 > kredensial sementara selama ±30 menit. Siapa pun yang membuka URL tersebut
