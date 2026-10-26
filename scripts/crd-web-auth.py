@@ -174,7 +174,7 @@ PAGE_TEMPLATE = r"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="dark light">
-<meta name="theme-color" content="#24273a">
+<meta name="theme-color" content="#0d0d0d">
 <title>Otorisasi Chrome Remote Desktop</title>
 <script>
 (function () {
@@ -191,69 +191,71 @@ PAGE_TEMPLATE = r"""<!doctype html>
 </script>
 <style>
   :root {
+    /* Dark monokrom — semua nilai grayscale, tidak ada hue warna. */
     color-scheme: dark;
-    --base: #24273a;
-    --mantle: #1e2030;
-    --crust: #181926;
-    --surface0: #363a4f;
-    --surface1: #494d64;
-    --surface2: #5b6078;
-    --text: #cad3f5;
-    --subtext1: #b8c0e0;
-    --subtext0: #a5adcb;
-    --mauve: #c6a0f6;
-    --blue: #8aadf4;
-    --green: #a6da95;
-    --yellow: #eed49f;
-    --red: #ed8796;
-    --peach: #f5a97f;
-    --teal: #8bd5ca;
-    --mauve-soft: rgba(198, 160, 246, .16);
-    --blue-soft: rgba(138, 173, 244, .14);
-    --green-soft: rgba(166, 218, 149, .14);
-    --red-soft: rgba(237, 135, 150, .14);
-    --yellow-soft: rgba(238, 212, 159, .14);
-    --card: rgba(54, 58, 79, .68);
-    --card-border: rgba(202, 211, 245, .12);
-    --card-shadow: 0 24px 70px rgba(0, 0, 0, .35);
-    --input: #1e2030;
-    --input-border: #494d64;
-    --grid: rgba(202, 211, 245, .045);
-    --glow1: rgba(198, 160, 246, .18);
-    --glow2: rgba(138, 173, 244, .12);
-    --on-accent: #181926;
+    --base: #0d0d0d;
+    --mantle: #141414;
+    --crust: #1a1a1a;
+    --surface0: #222222;
+    --surface1: #2a2a2a;
+    --surface2: #333333;
+    --text: #e8e8e8;
+    --subtext1: #999999;
+    --subtext0: #666666;
+    --mauve: #ffffff;
+    --blue: #b3b3b3;
+    --green: #d4d4d4;
+    --yellow: #c0c0c0;
+    --red: #a8a8a8;
+    --peach: #b8b8b8;
+    --teal: #b0b0b0;
+    --mauve-soft: rgba(255, 255, 255, .10);
+    --blue-soft: rgba(179, 179, 179, .10);
+    --green-soft: rgba(212, 212, 212, .10);
+    --red-soft: rgba(168, 168, 168, .10);
+    --yellow-soft: rgba(192, 192, 192, .10);
+    --card: rgba(34, 34, 34, .72);
+    --card-border: rgba(255, 255, 255, .08);
+    --card-shadow: 0 24px 70px rgba(0, 0, 0, .45);
+    --input: #1a1a1a;
+    --input-border: #444444;
+    --grid: rgba(255, 255, 255, .035);
+    --glow1: rgba(255, 255, 255, .06);
+    --glow2: rgba(255, 255, 255, .04);
+    --on-accent: #0d0d0d;
   }
   :root[data-theme="light"] {
+    /* Light monokrom — semua nilai grayscale, tidak ada hue warna. */
     color-scheme: light;
-    --base: #eff1f5;
-    --mantle: #e6e9ef;
-    --crust: #dce0e8;
+    --base: #f5f5f5;
+    --mantle: #ededed;
+    --crust: #e5e5e5;
     --surface0: #ffffff;
-    --surface1: #e6e9ef;
-    --surface2: #ccd0da;
-    --text: #4c4f69;
-    --subtext1: #5c5f77;
-    --subtext0: #6c6f85;
-    --mauve: #8839ef;
-    --blue: #1e66f5;
-    --green: #40a02b;
-    --yellow: #df8e1d;
-    --red: #d20f39;
-    --peach: #fe640b;
-    --teal: #179299;
-    --mauve-soft: rgba(136, 57, 239, .10);
-    --blue-soft: rgba(30, 102, 245, .09);
-    --green-soft: rgba(64, 160, 43, .10);
-    --red-soft: rgba(210, 15, 57, .09);
-    --yellow-soft: rgba(223, 142, 29, .12);
-    --card: rgba(255, 255, 255, .78);
-    --card-border: rgba(76, 79, 105, .12);
-    --card-shadow: 0 24px 70px rgba(76, 79, 105, .14);
+    --surface1: #f0f0f0;
+    --surface2: #e8e8e8;
+    --text: #222222;
+    --subtext1: #666666;
+    --subtext0: #999999;
+    --mauve: #0d0d0d;
+    --blue: #333333;
+    --green: #555555;
+    --yellow: #777777;
+    --red: #666666;
+    --peach: #6d6d6d;
+    --teal: #606060;
+    --mauve-soft: rgba(13, 13, 13, .06);
+    --blue-soft: rgba(51, 51, 51, .06);
+    --green-soft: rgba(85, 85, 85, .06);
+    --red-soft: rgba(102, 102, 102, .06);
+    --yellow-soft: rgba(119, 119, 119, .06);
+    --card: rgba(255, 255, 255, .82);
+    --card-border: rgba(0, 0, 0, .08);
+    --card-shadow: 0 24px 70px rgba(0, 0, 0, .10);
     --input: #ffffff;
-    --input-border: #ccd0da;
-    --grid: rgba(76, 79, 105, .05);
-    --glow1: rgba(136, 57, 239, .10);
-    --glow2: rgba(30, 102, 245, .08);
+    --input-border: #cccccc;
+    --grid: rgba(0, 0, 0, .035);
+    --glow1: rgba(0, 0, 0, .05);
+    --glow2: rgba(0, 0, 0, .04);
     --on-accent: #ffffff;
   }
   *, *::before, *::after { box-sizing: border-box; }
@@ -1316,7 +1318,7 @@ PAGE_TEMPLATE = r"""<!doctype html>
     var icon = $("#theme-icon");
     if (icon) icon.setAttribute("href", "#i-" + (pref === "auto" ? "auto" : resolved));
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", light ? "#eff1f5" : "#24273a");
+    if (meta) meta.setAttribute("content", light ? "#f5f5f5" : "#0d0d0d");
     updateThemeButton();
   }
 
