@@ -83,11 +83,14 @@ lalu otomatis mati. Setiap run adalah lingkungan bersih — selesai, hilang.
 | **OpenCode CLI + Desktop** | CLI di `/usr/local/bin/opencode`, plus app desktop |
 | **Chrome Remote Desktop** | Jalur akses utamanya |
 | **virt-manager + libvirt/QEMU** | Untuk menjalankan VM di dalamnya (nested). GNOME juga menyertakan GNOME Boxes |
-| **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font |
+| **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font (workflow Cinnamon 26 saja — workflow GNOME memakai tema default) |
 | **safe-upgrade** | Pengganti `apt upgrade` yang tidak memutus sesi |
 
-Plus: timezone **WIB (Asia/Jakarta)**, screensaver & lock dimatikan, wallpaper
-Catppuccin, dan shortcut di Desktop.
+Plus: timezone **WIB (Asia/Jakarta)**, screensaver & lock dimatikan. Workflow
+Cinnamon 26 memakai wallpaper Catppuccin dan tema lengkap; workflow GNOME
+`GNOME 24.04` dan `GNOME 26 + CRD (Wayland BETA)` sengaja **vanilla** — 100%
+default GNOME/Ubuntu: tanpa tema pihak ketiga, tanpa shortcut di Desktop
+(clean), dan wallpaper default.
 
 ### Varian desktop
 

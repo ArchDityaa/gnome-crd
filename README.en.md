@@ -84,11 +84,14 @@ down automatically. Every run is a clean environment — when it ends, it's gone
 | **OpenCode CLI + Desktop** | CLI at `/usr/local/bin/opencode`, plus the desktop app |
 | **Chrome Remote Desktop** | The main access path |
 | **virt-manager + libvirt/QEMU** | For running VMs inside (nested). GNOME also includes GNOME Boxes |
-| **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font |
+| **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font (Cinnamon 26 workflow only — GNOME workflows use the default theme) |
 | **safe-upgrade** | A drop-in replacement for `apt upgrade` that won't kill your session |
 
-Plus: timezone **Asia/Jakarta (WIB)**, screensaver & lock disabled, Catppuccin
-wallpaper, and desktop shortcuts.
+Plus: timezone **Asia/Jakarta (WIB)**, screensaver & lock disabled. The
+Cinnamon 26 workflow ships the Catppuccin wallpaper and full theme; the
+`GNOME 24.04` and `GNOME 26 + CRD (Wayland BETA)` workflows are intentionally
+**vanilla** — 100% default GNOME/Ubuntu: no third-party themes, no desktop
+shortcuts (clean), and the default wallpaper.
 
 ### Desktop variants
 
