@@ -1591,9 +1591,28 @@ jobs:
           SHELL_MISS=0                # cek gnome-shell hilang berturut-turut
           LAST_HOST_RESTART=0         # epoch restart host terakhir
           LAST_SHELL_PID=""           # pid shell terakhir yang teramati
+          LAST_EXTRA_PIDS=""          # daftar pid shell ekstra dari heartbeat sebelumnya
 
           get_shell_pid() {
             as_runner systemctl --user show -p MainPID --value org.gnome.Shell@ubuntu.service 2>/dev/null || true
+          }
+
+          # P1b: CRD daemon bisa meng-spin gnome-shell/Xvfb DI LUAR systemd user
+          # unit (kasus: gnome-shell[54763] "xkbcomp ... X server" +
+          # gnome-shell[54788] "libEGL DRI3" saat host start). Instrumen ini
+          # meninggalkan Main PID unit saja tidak lengkap, jadi di sini semua
+          # instans diintip: proses ekstra + siapa parent-nya + jejak session X.
+          collect_extra_processes() {
+            # Semua instans gnome-shell, dikurangi Main PID unit.
+            EXTRA_PIDS=""
+            EXTRA_COUNT=0
+            for p in $(pgrep -x gnome-shell 2>/dev/null || true); do
+              [ "$p" = "$1" ] && continue
+              EXTRA_PIDS="$EXTRA_PIDS $p"
+              EXTRA_COUNT=$(( EXTRA_COUNT + 1 ))
+            done
+            # Jejak server-X / compositor X (sesi legacy CRD).
+            X_PROCS="$(pgrep -a -x 'Xvfb|Xwayland' 2>/dev/null || true)"
           }
 
           echo ""
@@ -1604,6 +1623,19 @@ jobs:
           echo -e "  [INFO] Access : https://remotedesktop.google.com/access"
           echo -e "  [INFO] User   : runner"
           echo "=============================================================="
+
+          # P1b: flag konfigurasi host CRD. Kalau versi CRD baru berhenti
+          # menghormati flag Wayland (fallback ke sesi X legacy sendiri),
+          # di sini kelihatan key yang relevan di host.json.
+          HOST_JSON="/home/runner/.config/chrome-remote-desktop/host.json"
+          echo "::group::[CONFIG] host.json: daftar key + flag wayland/x-session/display"
+          if [ -f "$HOST_JSON" ]; then
+            echo "      keys: $(grep -oE '"[a-zA-Z_]+":' "$HOST_JSON" | tr -d '\":' | tr '\n' ' ' || true)"
+            grep -oE '"[a-zA-Z_]*(wayland|experimental|x_session|display)[a-zA-Z_]*": ?[^,}]+' "$HOST_JSON" | sed 's/^/      /' || echo "      (tidak ada key wayland/experimental/x_session/display)"
+          else
+            echo "      host.json tidak ditemukan di $HOST_JSON"
+          fi
+          echo "::endgroup::"
 
           while :; do
             NOW=$(date +%s)
@@ -1674,6 +1706,37 @@ jobs:
               echo -e "  ${C_YELLOW}[WARN] chrome-remote-desktop@runner masih tidak aktif; coba lagi siklus berikutnya.${C_NC}"
             fi
 
+            # ---- 4b. P1b: gnome-shell/X DI LUAR unit systemd (anak daemon CRD) ----
+            # Kasus log insiden: gnome-shell[54763] "xkbcomp ... X server" dan
+            # [54788] "libEGL DRI3" MUNCUL SAAT host start, di luar unit
+            # org.gnome.Shell@ubuntu.service. Monitor Main PID saja dirahasiakan
+            # ke proses ini, jadi semua instans diintip + parentage dibongkar:
+            # kalau parent-nya daemon CRD -> bukti "CRD versi baru spawn sesi X".
+            collect_extra_processes "$SHELL_PID"
+            if [ "$EXTRA_COUNT" -gt 0 ]; then
+              echo -e "  ${C_RED}[WARN] gnome-shell ${EXTRA_COUNT}x DI LUAR unit systemd (unit=$SHELL_PID):${EXTRA_PIDS:-} ${C_NC}"
+              if [ "$EXTRA_PIDS " != "$LAST_EXTRA_PIDS " ]; then
+                echo "::group::[INCIDENT] gnome-shell ekstra: parentage + args"
+                for p in $EXTRA_PIDS; do
+                  PPID_X="$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')"
+                  echo "      -- shell PID ${p} (parent ${PPID_X:-?}):"
+                  ps -o pid,ppid,comm,args -p "$p" --no-headers 2>/dev/null | sed 's/^/          /'
+                  if [ -n "$PPID_X" ] && [ "$PPID_X" != "1" ]; then
+                    echo "          parent ${PPID_X}:"
+                    ps -o pid,ppid,comm,args -p "$PPID_X" --no-headers 2>/dev/null | sed 's/^/              /'
+                  fi
+                done
+                echo "::endgroup::"
+                LAST_EXTRA_PIDS="$EXTRA_PIDS"
+              fi
+            else
+              LAST_EXTRA_PIDS=""
+            fi
+            if [ -n "$X_PROCS" ]; then
+              echo -e "  ${C_RED}[WARN] proses X-server hidup (bukan Wayland headless):${C_NC}"
+              printf '%s\n' "$X_PROCS" | sed 's/^/      /'
+            fi
+
             # ---- 5. Journal error ringkas tiap heartbeat ----
             JOURNAL_ERRORS="$(as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 200 --no-pager --since "-$(( INTERVAL / 60 ))min" 2>/dev/null | grep -iE "error|segfault|crash|abort|screencast" | tail -n 5 || true)"
             if [ -n "$JOURNAL_ERRORS" ]; then
@@ -1681,8 +1744,17 @@ jobs:
               printf '%s\n' "$JOURNAL_ERRORS" | sed 's/^/      /'
             fi
 
+            # ---- 5b. P1b: journal host CRD (system journal, bukan user) ----
+            # Kalau daemon CRD yang spawn sesi X sendiri, jejaknya muncul di
+            # sini ("Starting X server", display config, dst).
+            CRD_JOURNAL="$(sudo journalctl -u chrome-remote-desktop@runner -n 60 --no-pager --since "-$(( INTERVAL / 60 ))min" 2>/dev/null | grep -iE 'session|wayland|display|x11|xvfb|fail|error' | tail -n 8 || true)"
+            if [ -n "$CRD_JOURNAL" ]; then
+              echo -e "  ${C_YELLOW}[JOURNAL-HOST] chrome-remote-desktop@runner (jendela $(( INTERVAL / 60 )) menit):${C_NC}"
+              printf '%s\n' "$CRD_JOURNAL" | sed 's/^/      /'
+            fi
+
             # ---- 6. Heartbeat ----
-            echo -e "  ${C_CYAN}[HEARTBEAT] up $(( ELAPSED / 60 ))m | sisa ~$(( REMAIN / 60 ))m | shell PID: ${SHELL_PID:-?} ${SHELL_STATE} | portal-gnome: ${PORTAL_STATE} | restart host: ${HOST_RESTARTS}x${C_NC}"
+            echo -e "  ${C_CYAN}[HEARTBEAT] up $(( ELAPSED / 60 ))m | sisa ~$(( REMAIN / 60 ))m | shell PID: ${SHELL_PID:-?} ${SHELL_STATE} | extra-shell: ${EXTRA_COUNT}x | portal-gnome: ${PORTAL_STATE} | restart host: ${HOST_RESTARTS}x${C_NC}"
 
             # ---- 7. Tidur satu interval (tidak melebihi sisa waktu) ----
             SLEEP_NOW="$INTERVAL"
