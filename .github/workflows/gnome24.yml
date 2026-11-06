@@ -904,72 +904,6 @@ jobs:
 
 
       # ============================================================
-      # CREATE DESKTOP SHORTCUTS
-      # ============================================================
-      - name: Create Desktop Shortcuts
-        run: |
-          C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_YELLOW='\033[1;33m'; C_NC='\033[0m'
-
-          echo ""
-          echo "------------------------------------------------------------"
-          echo -e "${C_CYAN}[STEP 13/19] CREATE DESKTOP SHORTCUTS${C_NC}"
-          echo "------------------------------------------------------------"
-
-          echo -e "${C_YELLOW}[INFO] Creating Antigravity shortcut...${C_NC}"
-          sudo -u runner bash -c 'cat > /home/runner/Desktop/Antigravity.desktop <<EOF
-          [Desktop Entry]
-          Version=1.0
-          Type=Application
-          Name=Google Antigravity
-          Comment=Open Google Antigravity
-          Exec=google-chrome --app=https://antigravity.google/ --no-sandbox
-          Icon=google-chrome
-          Terminal=false
-          EOF'
-
-          echo -e "${C_YELLOW}[INFO] Creating VS Code shortcut...${C_NC}"
-          sudo -u runner bash -c 'cat > /home/runner/Desktop/VSCode.desktop <<EOF
-          [Desktop Entry]
-          Version=1.0
-          Type=Application
-          Name=Visual Studio Code
-          Comment=Visual Studio Code
-          Exec=code
-          Icon=code
-          Terminal=false
-          EOF'
-
-          # OpenCode Desktop (.deb sudah menyediakan .desktop di
-          # /usr/share/applications, tinggal salin ke Desktop).
-          # Fallback: buat manual jika file tidak ditemukan.
-          echo -e "${C_YELLOW}[INFO] Linking OpenCode shortcut...${C_NC}"
-          if ls /usr/share/applications/*opencode*.desktop 1> /dev/null 2>&1; then
-            cp /usr/share/applications/*opencode*.desktop /home/runner/Desktop/ || true
-          else
-            sudo -u runner bash -c 'cat > /home/runner/Desktop/OpenCode.desktop <<EOF
-          [Desktop Entry]
-          Version=1.0
-          Type=Application
-          Name=OpenCode
-          Comment=OpenCode Desktop
-          Exec=opencode-desktop
-          Icon=opencode-desktop
-          Terminal=false
-          EOF'
-          fi
-
-          sudo chmod +x /home/runner/Desktop/*.desktop
-
-          sudo chown -R runner:runner /home/runner/Desktop
-
-          echo "------------------------------------------------------------"
-          ls -l /home/runner/Desktop/*.desktop || true
-          echo "------------------------------------------------------------"
-
-          echo -e "${C_GREEN}[OK] Desktop shortcuts created.${C_NC}"
-
-
-      # ============================================================
       # SET WALLPAPER (BLACK UNICAT / CATPPUCCIN)
       # ============================================================
       - name: Set Wallpaper
@@ -1597,32 +1531,6 @@ jobs:
           ls -l /usr/local/bin/safe-upgrade || true
           safe-upgrade --help || true
           ls -l /home/runner/Desktop/SafeUpgrade.desktop || true
-          echo "::endgroup::"
-
-          echo "::group::[CHECK] Google Chrome"
-          google-chrome --version || true
-          echo "::endgroup::"
-
-          echo "::group::[CHECK] VS Code"
-          code --version || true
-          echo "::endgroup::"
-
-          echo "::group::[CHECK] OpenCode CLI"
-          opencode --version || true
-          which opencode || true
-          echo "::endgroup::"
-
-          echo "::group::[CHECK] OpenCode Desktop"
-          dpkg -l | grep -i opencode || true
-          ls /usr/share/applications/*opencode* || true
-          ls /home/runner/Desktop/*pencode*.desktop || true
-          echo "::endgroup::"
-
-          echo "::group::[CHECK] Chrome Remote Desktop service"
-          systemctl status \
-            chrome-remote-desktop@runner.service \
-            --no-pager \
-            || true
           echo "::endgroup::"
 
           echo "::group::[CHECK] Remote user"
