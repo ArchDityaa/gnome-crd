@@ -89,6 +89,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   nama workflow aktual (`gnome24.yml`, `gnome26-wayland-beta.yml`), runner per
   varian, resolusi per varian, tema form monokrom, tema/shortcut/wallpaper per
   workflow, dan referensi file yang dihapus/rename.
+- `gnome26-wayland-beta.yml`: **dark theme otomatis** — dconf system default
+  `/etc/dconf/db/local.d/97-crd-dark-mode` + fallback per-user gsettings
+  (`color-scheme='prefer-dark'` untuk app libadwaita, `gtk-theme='Yaru-dark'`
+  untuk app legacy GTK3). Wallpaper tetap default; varian gelap
+  (`picture-uri-dark`) dipilih Ubuntu otomatis. Step Verify kini meng-assert
+  dark mode aktif.
+- `gnome24.yml` & `cinnamon.yml`: jeda sebelum tunnel Cloudflare ditutup
+  dinaikkan `sleep 5` → `sleep 20` agar window polling browser form lebih aman
+  (interval polling 2–10s + warm-up jaringan).
 
 ### Fixed
 
@@ -104,6 +113,22 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   `firefox`/`thunderbird` dihapus dan di-hold sebelum `apt-get upgrade` di
   `gnome.yml` dan `gnome26.yml`, sehingga upgrade tidak memicu
   “Installing the firefox snap”.
+- **Status success form web kini terkirim ke browser di workflow
+  `gnome26-wayland-beta.yml`.** Sebelumnya `set-status success` baru ditulis
+  setelah tunnel Cloudflare ditutup + verifikasi Wayland (~10–90 detik), sehingga
+  form terjebak "Memproses" walau registrasi berhasil (device tetap muncul di
+  remotedesktop.google.com/access). Kini cek service + `set-status success`
+  berjalan saat tunnel masih hidup, dan `set-status failed` di jalur
+  gagal-late (Wayland gagal) tidak lagi menimpa success yang sudah terkirim.
+- **Form web tidak lagi berdiam saat koneksi putus**: bila polling
+  `/<token>/status` gagal saat masih `queued/registering/sending`, halaman
+  menampilkan pesan bahwa registrasi kemungkinan berhasil (ID/EN) untuk dicek
+  ke remotedesktop.google.com/access.
+- **Keep-alive monitor Wayland BETA tidak lagi false-positive**: proses
+  `Xwayland` (spawn normal gnome-shell untuk app X11 seperti Chrome) tidak lagi
+  dilaporkan `[WARN]` "proses X-server hidup"; alarm hanya untuk `Xvfb`
+  (indikasi sesi legacy X) dengan pesan
+  "[WARN] proses Xvfb hidup (sesi legacy X, bukan Wayland headless)".
 
 ## [1.0.0] - 2026-10-18
 

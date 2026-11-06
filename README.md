@@ -85,14 +85,17 @@ GNOME 26 + CRD (Wayland BETA).
 | **OpenCode CLI + Desktop** | CLI di `/usr/local/bin/opencode`, plus app desktop |
 | **Chrome Remote Desktop** | Jalur akses utamanya |
 | **virt-manager + libvirt/QEMU** | Untuk menjalankan VM di dalamnya (nested). GNOME juga menyertakan GNOME Boxes |
-| **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font (workflow Cinnamon 26 & GNOME 24.04 — workflow Wayland BETA memakai tema default) |
+| **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font (workflow Cinnamon 26 & GNOME 24.04 — workflow Wayland BETA memakai tema default GNOME/Ubuntu dengan **dark mode otomatis**) |
 | **safe-upgrade** | Pengganti `apt upgrade` yang tidak memutus sesi |
 
 Plus: timezone **WIB (Asia/Jakarta)**, screensaver & lock dimatikan. Workflow
 Cinnamon 26 **dan** GNOME 24.04 memakai wallpaper Catppuccin, tema lengkap, dan
 shortcut Safe Upgrade di Desktop. Hanya `GNOME 26 + CRD (Wayland BETA)` yang
 sengaja **vanilla** — 100% default GNOME/Ubuntu: tanpa tema pihak ketiga,
-tanpa shortcut di Desktop (kosong), dan wallpaper default.
+tanpa shortcut di Desktop (kosong), dan wallpaper default — tapi **dark mode
+sudah aktif otomatis** (`color-scheme='prefer-dark'` untuk app libadwaita +
+`gtk-theme='Yaru-dark'` untuk app legacy GTK3; wallpaper pun memakai varian
+gelap default `adwaita-d.jxl`).
 
 ### Varian desktop
 
@@ -247,7 +250,9 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 - **Menjalankan VM (KVM):** `virt-manager` (kedua varian), atau **GNOME Boxes**
   di varian GNOME. Runner x86 punya KVM, jadi VM berjalan dengan akselerasi hardware.
 - **Theme:** Catppuccin Macchiato (Mauve) sudah aktif di workflow GNOME 24.04 &
-  Cinnamon 26 (Wayland BETA memakai tema default GNOME). Di Cinnamon, ganti
+  Cinnamon 26 (Wayland BETA memakai tema default GNOME/Ubuntu dengan **dark
+  mode otomatis** — `prefer-dark` + `Yaru-dark`, diadministrasi lewat dconf
+  `/etc/dconf/db/local.d/97-crd-dark-mode`). Di Cinnamon, ganti
   lewat **Themes** → *Desktop*; kalau `cinnamon.css` bermasalah, kembalikan
   tema bawaan dengan `gsettings set org.cinnamon.theme name ''`.
 

@@ -86,14 +86,17 @@ GNOME 26 + CRD (Wayland BETA).
 | **OpenCode CLI + Desktop** | CLI at `/usr/local/bin/opencode`, plus the desktop app |
 | **Chrome Remote Desktop** | The main access path |
 | **virt-manager + libvirt/QEMU** | For running VMs inside (nested). GNOME also includes GNOME Boxes |
-| **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font (Cinnamon 26 & GNOME 24.04 workflows — the Wayland BETA workflow uses the default theme) |
+| **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font (Cinnamon 26 & GNOME 24.04 workflows — the Wayland BETA workflow uses the default GNOME/Ubuntu theme with **automatic dark mode**) |
 | **safe-upgrade** | A drop-in replacement for `apt upgrade` that won't kill your session |
 
 Plus: timezone **Asia/Jakarta (WIB)**, screensaver & lock disabled. The
 Cinnamon 26 **and** GNOME 24.04 workflows ship the Catppuccin wallpaper, full
 theme, and a Safe Upgrade desktop shortcut. Only `GNOME 26 + CRD (Wayland
 BETA)` is intentionally **vanilla** — 100% default GNOME/Ubuntu: no
-third-party themes, an empty desktop (no shortcuts), and the default wallpaper.
+third-party themes, an empty desktop (no shortcuts), and the default wallpaper
+— but **dark mode is enabled automatically** (`color-scheme='prefer-dark'` for
+libadwaita apps + `gtk-theme='Yaru-dark'` for legacy GTK3 apps; the wallpaper
+uses the default dark variant `adwaita-d.jxl`).
 
 ### Desktop variants
 
@@ -247,7 +250,9 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
 - **Run VMs (KVM):** use `virt-manager` (both variants), or **GNOME Boxes** on
   GNOME. x86 runners have KVM, so VMs run with hardware acceleration.
 - **Theme:** Catppuccin Macchiato (Mauve) is already active on the GNOME 24.04
-  & Cinnamon 26 workflows (Wayland BETA uses the default GNOME theme). On
+  & Cinnamon 26 workflows (Wayland BETA uses the default GNOME/Ubuntu theme
+  with **automatic dark mode** — `prefer-dark` + `Yaru-dark`, managed via the
+  dconf file `/etc/dconf/db/local.d/97-crd-dark-mode`). On
   Cinnamon, change it via **Themes** → *Desktop*; if `cinnamon.css` misbehaves,
   restore the built-in theme with `gsettings set org.cinnamon.theme name ''`.
 
