@@ -1550,29 +1550,151 @@ jobs:
 
 
       # ============================================================
-      # KEEP ALIVE
+      # KEEP ALIVE — MONITOR LOOP + INSTRUMEN DIAGNOSTIK WAYLAND
+      #
+      # Bukan sekadar `sleep`. Sejak kasus "awalnya normal, lalu tiba-tiba
+      # hitam + kursor (host tetap online)", step ini jadi alat diagnosis:
+      #   1. Heartbeat tiap INTERVAL ke log Actions: status CRD host service,
+      #      Main PID gnome-shell@ubuntu (user service = compositor Wayland
+      #      headless), is-active xdg-desktop-portal-gnome, plus snippet
+      #      journal shell yang di-filter error.
+      #   2. Deteksi insiden: kalau Main PID org.gnome.Shell@ubuntu BERUBAH
+      #      (crash+respawn) atau service tidak aktif -> log warn besar +
+      #      dump journal -n 60.ke log. PID sama + tidak ada error tetap
+      #      dicatat, supaya kasusp "stream mati (CRD/portal)" vs "shell
+      #      restart" bisa dibedakan presisi menit.
+      #   3. Auto-restart hanya untuk chrome-remote-desktop@runner (host
+      #      daemon); gnome-shell TIDAK di-restart otomatis supaya bukti
+      #      crash tetap tersedia di dump journal.
+      # Anti-belok loop: restart host dibatasi maksimal 1x per 2 menit.
+      # Sisa waktu dihitung dari JOB_START_EPOCH agar tidak menabrak
+      # timeout job 360 menit.
       # ============================================================
       - name: Keep Alive
         run: |
-          C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_YELLOW='\033[1;33m'; C_NC='\033[0m'
+          C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_YELLOW='\033[1;33m'; C_RED='\033[1;31m'; C_NC='\033[0m'
 
-          # Hitung sisa waktu dari batas job 360 menit, bukan sleep 21600 fix.
-          # Install + tunggu form web + verify memakan waktu, jadi sleep fix
-          # akan menabrak timeout job dan mematikan sesi lebih cepat dari 6 jam.
+          RUNNER_UID=$(id -u runner)
+          as_runner() {
+            sudo -u runner env \
+              XDG_RUNTIME_DIR="/run/user/$RUNNER_UID" \
+              DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$RUNNER_UID/bus" \
+              "$@"
+          }
+
           JOB_START="${JOB_START_EPOCH:-$(date +%s)}"
-          ELAPSED=$(( $(date +%s) - JOB_START ))
-          SLEEP_SECONDS=$(( 360 * 60 - ELAPSED - 60 ))
-          if [ "$SLEEP_SECONDS" -lt 60 ]; then
-            SLEEP_SECONDS=60
-          fi
+          JOB_LIMIT=$(( 360 * 60 ))   # samakan dengan timeout-minutes: 360
+          GRACE=60                    # ruang untuk cleanup job
+          INTERVAL=300                # heartbeat + health check tiap 5 menit
+          RESTART_MIN_GAP=120         # anti-tight-loop: min jeda antar restart host
+          HOST_RESTARTS=0             # jumlah restart daemon CRD
+          SHELL_MISS=0                # cek gnome-shell hilang berturut-turut
+          LAST_HOST_RESTART=0         # epoch restart host terakhir
+          LAST_SHELL_PID=""           # pid shell terakhir yang teramati
+
+          get_shell_pid() {
+            as_runner systemctl --user show -p MainPID --value org.gnome.Shell@ubuntu.service 2>/dev/null || true
+          }
 
           echo ""
           echo "=============================================================="
-          echo -e "${C_GREEN}  [OK] CHROME REMOTE DESKTOP IS RUNNING${C_NC}"
+          echo -e "${C_GREEN}  [OK] CHROME REMOTE DESKTOP IS RUNNING (WAYLAND BETA)${C_NC}"
           echo "=============================================================="
-          echo -e "  ${C_YELLOW}[INFO] Keep-alive ${SLEEP_SECONDS}s (elapsed ${ELAPSED}s). Jangan cancel workflow.${C_NC}"
+          echo -e "  ${C_YELLOW}[INFO] Keep-alive monitor tiap ${INTERVAL}s sampai batas job 360 menit. Jangan cancel workflow.${C_NC}"
           echo -e "  [INFO] Access : https://remotedesktop.google.com/access"
           echo -e "  [INFO] User   : runner"
           echo "=============================================================="
 
-          sleep "$SLEEP_SECONDS"
+          while :; do
+            NOW=$(date +%s)
+            ELAPSED=$(( NOW - JOB_START ))
+            REMAIN=$(( JOB_LIMIT - GRACE - ELAPSED ))
+
+            if [ "$REMAIN" -le 0 ]; then
+              echo -e "  [INFO] Batas job tercapai (elapsed $(( ELAPSED / 60 )) menit). Keep-alive berakhir."
+              break
+            fi
+
+            # ---- 1. State snapshot komponen session ----
+            if systemctl is-active --quiet chrome-remote-desktop@runner 2>/dev/null; then
+              HOST_STATE="active"
+            else
+              HOST_STATE="NOT-ACTIVE"
+            fi
+            SHELL_STATE="$(as_runner systemctl --user is-active org.gnome.Shell@ubuntu.service 2>/dev/null || echo unknown)"
+            SHELL_PID="$(get_shell_pid)"
+            PORTAL_STATE="$(as_runner systemctl --user is-active xdg-desktop-portal-gnome.service 2>/dev/null || echo unknown)"
+
+            # ---- 2. Deteksi gnome-shell PID berubah (crash + respawn) ----
+            if [ -n "$LAST_SHELL_PID" ] && [ -n "$SHELL_PID" ] && [ "$SHELL_PID" != "$LAST_SHELL_PID" ]; then
+              echo ""
+              echo "##[warning]GNOME Shell PID berubah (${LAST_SHELL_PID} -> ${SHELL_PID}): compositor crash / respawn di tengah sesi (ciri black screen + kursor)."
+              echo -e "  ${C_RED}[INCIDENT] gnome-shell PID changed ${LAST_SHELL_PID} -> ${SHELL_PID}${C_NC}"
+              echo "::group::[INCIDENT] journal org.gnome.Shell@ubuntu.service (60 baris terakhir)"
+              as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 60 --no-pager || true
+              echo "::endgroup::"
+              SHELL_MISS=0
+            fi
+            LAST_SHELL_PID="$SHELL_PID"
+
+            if [ "$SHELL_STATE" != "active" ]; then
+              SHELL_MISS=$(( SHELL_MISS + 1 ))
+              echo -e "  ${C_RED}[WARN] org.gnome.Shell@ubuntu.service tidak aktif (${SHELL_MISS}x berurutan). Compositor Wayland mati -> capture pasti hitam.${C_NC}"
+              if [ "$SHELL_MISS" -le 1 ]; then
+                echo "::group::[INCIDENT] status + journal gnome-shell saat tidak aktif"
+                as_runner systemctl --user status org.gnome.Shell@ubuntu.service --no-pager || true
+                as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 60 --no-pager || true
+                echo "::endgroup::"
+              fi
+            else
+              SHELL_MISS=0
+            fi
+
+            # ---- 3. Auto-restart HANYA host daemon CRD (bukan shell) ----
+            HOST_RESTARTED=""
+            if [ "$HOST_STATE" != "active" ]; then
+              echo -e "  ${C_YELLOW}[WARN] chrome-remote-desktop@runner tidak aktif.${C_NC}"
+              if [ $(( NOW - LAST_HOST_RESTART )) -ge "$RESTART_MIN_GAP" ]; then
+                HOST_RESTARTS=$(( HOST_RESTARTS + 1 ))
+                LAST_HOST_RESTART=$NOW
+                echo -e "  ${C_YELLOW}[INFO] Restart chrome-remote-desktop@runner (ke-${HOST_RESTARTS})...${C_NC}"
+                sudo systemctl restart chrome-remote-desktop@runner 2>/dev/null || \
+                  sudo systemctl start chrome-remote-desktop@runner 2>/dev/null || true
+                sleep 5
+                HOST_RESTARTED=1
+              else
+                echo -e "  ${C_YELLOW}[INFO] Restart host terbaru baru saja terjadi; tunggu siklus berikutnya.${C_NC}"
+              fi
+            fi
+
+            # ---- 4. Snapshot status pasca (potensi) restart ----
+            if systemctl is-active --quiet chrome-remote-desktop@runner 2>/dev/null; then
+              echo -e "  ${C_GREEN}[OK] chrome-remote-desktop@runner aktif${HOST_RESTARTED:+ (baru di-restart)}.${C_NC}"
+            else
+              echo -e "  ${C_YELLOW}[WARN] chrome-remote-desktop@runner masih tidak aktif; coba lagi siklus berikutnya.${C_NC}"
+            fi
+
+            # ---- 5. Journal error ringkas tiap heartbeat ----
+            JOURNAL_ERRORS="$(as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 200 --no-pager --since "-$(( INTERVAL / 60 ))min" 2>/dev/null | grep -iE "error|segfault|crash|abort|screencast" | tail -n 5 || true)"
+            if [ -n "$JOURNAL_ERRORS" ]; then
+              echo -e "  ${C_YELLOW}[JOURNAL] error/keyword 5 menit terakhir:${C_NC}"
+              printf '%s\n' "$JOURNAL_ERRORS" | sed 's/^/      /'
+            fi
+
+            # ---- 6. Heartbeat ----
+            echo -e "  ${C_CYAN}[HEARTBEAT] up $(( ELAPSED / 60 ))m | sisa ~$(( REMAIN / 60 ))m | shell PID: ${SHELL_PID:-?} ${SHELL_STATE} | portal-gnome: ${PORTAL_STATE} | restart host: ${HOST_RESTARTS}x${C_NC}"
+
+            # ---- 7. Tidur satu interval (tidak melebihi sisa waktu) ----
+            SLEEP_NOW="$INTERVAL"
+            if [ "$SLEEP_NOW" -gt "$REMAIN" ]; then
+              SLEEP_NOW="$REMAIN"
+            fi
+            sleep "$SLEEP_NOW"
+          done
+
+          echo ""
+          echo "=============================================================="
+          echo -e "  ${C_GREEN}[INFO] Sesi CRD dijaga sampai akhir batas job.${C_NC}"
+          echo -e "  [INFO] Total restart host CRD  : ${HOST_RESTARTS}x"
+          echo -e "  [INFO] Access : https://remotedesktop.google.com/access (user: runner)"
+          echo "=============================================================="
