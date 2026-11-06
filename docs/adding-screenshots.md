@@ -20,7 +20,9 @@ Cara termudah, semuanya dari dalam desktop GNOME:
 Hasilnya tersimpan di `~/Pictures` (folder yang sama dengan wallpaper).
 
 > Tips: aktifkan dulu animasi & tema supaya screenshot mewakili tampilan asli.
-> Workflow sudah menyiapkan Catppuccin Macchiato dan animasi GNOME.
+> Workflow GNOME 24.04 & Cinnamon 26 sudah menyiapkan tema Catppuccin Macchiato
+> + wallpaper + animasi; workflow Wayland BETA sengaja vanilla (tema/wallpaper
+> default GNOME, tanpa shortcut di Desktop).
 
 ---
 

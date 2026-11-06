@@ -58,9 +58,37 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   `gnome26.yml` vs `gnome.yml`.
 - `.github/ISSUE_TEMPLATE/bug_report.yml`: opsi masalah form web, peringatan
   token URL, dan checklist retry tanpa re-run.
+
+### Removed
+
+- `.github/workflows/gnome.yml` — workflow alur lama (perintah CRD diambil
+  **sebelum** run, ditempel ke input `crd_host_command`) dihapus. Semua
+  workflow aktif kini memakai alur form otorisasi web.
 - `.github/workflows/lint.yml`: `actionlint` mengabaikan label
   `ubuntu-26.04` yang belum dikenali actionlint 1.7.12.
 - `.gitignore`: tambah `__pycache__/` dan `*.pyc` untuk skrip Python baru.
+- `.github/workflows/gnome26.yml` **di-rename menjadi `gnome24.yml`** dan runner
+  diubah ke `ubuntu-24.04` (GNOME 50/Trixie tidak tersedia; komentar header
+  disesuaikan). Nama `gnome26.yml` pada entri historis di atas mengacu ke nama
+  file sebelum rename.
+- `.github/workflows/cinnamon.yml`: runner `ubuntu-26.04` → `ubuntu-24.04`.
+- `gnome24.yml`: hapus step `Create Desktop Shortcuts` (shortcut Antigravity,
+  VS Code, OpenCode di Desktop — aplikasi tetap tersedia via Activities/grid)
+  dan akhirnya keep-alive ditingkatkan jadi **monitor loop**: log heartbeat tiap
+  5 menit, auto-restart `chrome-remote-desktop@runner` yang mati, plus deteksi
+  gnome-shell user `runner` yang hilang 2 cek berturut-turut (tanpa menabrak
+  timeout job 360 menit).
+- Form otorisasi web (`scripts/crd-web-auth.py`): tema diperbarui dari
+  Catppuccin ke **grayscale monokrom** dengan mode Auto/Light/Dark.
+- `.github/workflows/gnome26-wayland-beta.yml`: desktop jadi **vanilla** —
+  hapus step `Create Desktop Shortcuts`, blok `SafeUpgrade.desktop`, step
+  `Set Wallpaper` (Catppuccin), dan step `Install Catppuccin Theme`. Step
+  Verify kini menuntut: tanpa aset Catppuccin, Desktop kosong, wallpaper default
+  GNOME/Ubuntu. Jalur GNOME 24.04 & Cinnamon 26 tetap bertema.
+- README (ID & EN) + `docs/faq.md` + `docs/troubleshooting.md`: sinkron penuh —
+  nama workflow aktual (`gnome24.yml`, `gnome26-wayland-beta.yml`), runner per
+  varian, resolusi per varian, tema form monokrom, tema/shortcut/wallpaper per
+  workflow, dan referensi file yang dihapus/rename.
 
 ### Fixed
 

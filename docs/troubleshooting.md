@@ -1,7 +1,8 @@
 # Troubleshooting
 
 Panduan lengkap untuk masalah yang paling sering muncul saat menjalankan
-**GNOME 26** atau **Cinnamon 26** (desktop + Chrome Remote Desktop).
+**GNOME 24.04**, **Cinnamon 26**, atau **GNOME 26 + CRD (Wayland BETA)**
+(desktop + Chrome Remote Desktop).
 
 > **Jangan pernah paste** URL form (mengandung token), isi `crd_host_command`,
 > kode OAuth (`--code=...`), atau PIN Anda ke issue/log publik. Cukup potongan
@@ -99,8 +100,8 @@ window **30 menit** masih berjalan. Tidak perlu re-run workflow.
 Kalau window sudah habis atau tunnel sudah tidak ada, jalankan ulang workflow.
 Cache `.deb` sudah tersimpan sebelum registrasi, jadi re-run jauh lebih cepat.
 
-> Untuk workflow lama **`gnome.yml`**: alurnya berbeda. Ambil perintah baru,
-> lalu **Re-run** workflow dan paste perintah itu ke input `crd_host_command`.
+> Workflow lama **`gnome.yml`** sudah dihapus dari repo; semua workflow aktif
+> memakai alur otorisasi web di bawah.
 
 ---
 
@@ -127,7 +128,7 @@ Cache `.deb` sudah tersimpan sebelum registrasi, jadi re-run jauh lebih cepat.
    sudo systemctl start chrome-remote-desktop@runner
    ```
 
-Nama device yang muncul adalah **gnome** (workflow GNOME 26) atau **cinnamon**
+Nama device yang muncul adalah **gnome** (workflow GNOME) atau **cinnamon**
 (workflow Cinnamon 26), bukan hostname runner. Keduanya di-override di workflow.
 
 ---
@@ -179,8 +180,9 @@ dari batas 6 jam yang sama.
 
 ## 8. Resolusi layar aneh / terlalu kecil
 
-Workflow mengunci resolusi ke **1024x768**, yang merupakan mode native driver
-`dummy` pada sesi CRD headless (jadi tahan re-attach). Ubah sementara lewat
+Workflow varian X11 (GNOME 24.04 & Cinnamon 26) mengunci resolusi **1024x768**,
+mode native driver `dummy` pada sesi CRD headless (jadi tahan re-attach). Wayland
+BETA memakai virtual monitor **1920x1080**. Ubah sementara lewat
 **Settings → Displays**, atau sesuaikan nilai `WANT=` di
 `/usr/local/bin/set-resolution.sh` dan `1024x768` di
 `~/.chrome-remote-desktop-session` bila Anda ingin permanen.
@@ -199,8 +201,8 @@ Sesi Anda mungkin dijalankan sebelum `runner` masuk grup `libvirt`/`kvm`.
 
 **"Cannot access KVM" / VM sangat lambat:**
 
-Runner x86 **`ubuntu-26.04`** (workflow `gnome26.yml` dan `cinnamon.yml`) punya
-`/dev/kvm`. Workflow lama `gnome.yml` memakai `ubuntu-24.04`. Cek:
+Runner x86 **`ubuntu-24.04`** (workflow `gnome24.yml` dan `cinnamon.yml`) dan
+**`ubuntu-26.04`** (workflow `gnome26-wayland-beta.yml`) punya `/dev/kvm`. Cek:
 
 ```bash
 ls -l /dev/kvm      # harus ada
@@ -250,16 +252,13 @@ default:
 | Cache `.deb` | kosong (unduh ~GB) | terpakai |
 | Perkiraan waktu | 20–40 menit | jauh lebih cepat |
 
-Untuk workflow **GNOME 26** dan **Cinnamon 26**:
+Untuk workflow **GNOME 24.04**, **Cinnamon 26**, dan **Wayland BETA**:
 
 - Registrasi gagal karena kode auth → **tidak perlu re-run**; ambil kode baru
   dan submit lagi di form selama window 30 menit.
 - Window otorisasi habis atau tunnel gagal → baru lakukan re-run.
 
-Untuk workflow lama **`gnome.yml`**:
-
-- Registrasi gagal → ambil perintah CRD baru, lalu **Re-run** dan paste ke input
-  `crd_host_command`.
+> Workflow lama `gnome.yml` sudah dihapus dari repo.
 
 ---
 

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Server web kecil untuk menerima perintah otorisasi Chrome Remote Desktop.
 
-Dipakai oleh `.github/workflows/gnome26.yml` dan `.github/workflows/cinnamon.yml`
-(STEP 17). Workflow menjalankan server ini di 127.0.0.1, lalu mengeksposnya
+Dipakai oleh `.github/workflows/gnome24.yml` (STEP 17),
+`.github/workflows/cinnamon.yml` (STEP 17), dan
+`.github/workflows/gnome26-wayland-beta.yml` (STEP 14). Workflow menjalankan
+server ini di 127.0.0.1, lalu mengeksposnya
 lewat Cloudflare quick tunnel.
 User membuka URL publik, meng-*authorize* akun Google di halaman headless CRD,
 lalu mem-paste perintah `start-host` ke form. Perintah disimpan ke file dan
@@ -12,9 +14,10 @@ Kenapa ada: kode OAuth `--code=...` dari Google bersifat sekali pakai dan cepat
 kadaluarsa, sedangkan instalasi desktop butuh 20-40 menit. Dengan form ini kode
 baru dibuat SETELAH desktop siap, jadi tidak sempat kedaluwarsa.
 
-Halaman form memakai tema Catppuccin Macchiato/Latte (auto mengikuti sistem,
-bisa diganti manual), toggle bahasa Indonesia/English, stepper, validasi awal,
-hitung mundur, progress bar, panel sukses, serta tombol salin/tempel.
+Halaman form memakai tema **grayscale monokrom** (dark/light, auto mengikuti
+sistem, bisa diganti manual), toggle bahasa Indonesia/English, stepper,
+validasi awal, hitung mundur, progress bar, panel sukses, serta tombol
+salin/tempel.
 
 Mode pemakaian:
     python3 crd-web-auth.py serve

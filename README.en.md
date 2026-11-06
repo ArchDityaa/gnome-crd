@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml"><img src="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
   <a href="https://github.com/ArchDityaa/gnome-crd/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/runner-ubuntu--26.04-E95420.svg" alt="Runner: ubuntu-26.04">
+  <img src="https://img.shields.io/badge/runner-ubuntu--24.04%20%7C%20beta--26.04-E95420.svg" alt="Runner: ubuntu-24.04 (Wayland BETA: 26.04)">
   <img src="https://img.shields.io/badge/session-max%206h-orange.svg" alt="Session: max 6h">
   <img src="https://img.shields.io/badge/desktop-GNOME-4A86CF.svg" alt="Desktop: GNOME">
   <img src="https://img.shields.io/badge/desktop-Cinnamon-7A2ECF.svg" alt="Desktop: Cinnamon">
@@ -53,7 +53,7 @@ flowchart LR
     A[Fork repo]:::action
     A --> B[Enable Actions]:::action
     B --> C[Run Workflow<br/>no auth input]:::action
-    C --> D[ubuntu-26.04 Runner<br/>GNOME / Cinnamon + Chrome]:::desktop
+    C --> D[ubuntu-24.04 Runner<br/>GNOME / Cinnamon + Chrome]:::desktop
     D --> E[Form URL via<br/>Cloudflare Tunnel]:::action
     E --> F[Authorize at<br/>remotedesktop.google.com]:::access
     F --> G[Paste Debian<br/>Command into Form]:::action
@@ -71,40 +71,48 @@ flowchart LR
 
 ## What you get
 
-One **Ubuntu 26.04** virtual machine (4 vCPU / 16 GB RAM) with a pre-configured
+One **Ubuntu** virtual machine (4 vCPU / 16 GB RAM) with a pre-configured
 **GNOME** or **Cinnamon** desktop, alive for up to **6 hours**, then it shuts
 down automatically. Every run is a clean environment — when it ends, it's gone.
+Runner is `ubuntu-24.04` for GNOME 24.04 & Cinnamon 26, and `ubuntu-26.04` for
+GNOME 26 + CRD (Wayland BETA).
 
 | Pre-installed | Notes |
 |---|---|
-| **GNOME Desktop** | Full `ubuntu` GNOME session (not XFCE) — `GNOME 26` workflow |
+| **GNOME Desktop** | Full `ubuntu` GNOME session (not XFCE) — `GNOME 24.04` workflow |
 | **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — `Cinnamon 26` workflow |
 | **Google Chrome** | Ready to sign in to your Google account |
 | **VS Code** | `code` |
 | **OpenCode CLI + Desktop** | CLI at `/usr/local/bin/opencode`, plus the desktop app |
 | **Chrome Remote Desktop** | The main access path |
 | **virt-manager + libvirt/QEMU** | For running VMs inside (nested). GNOME also includes GNOME Boxes |
-| **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font (Cinnamon 26 workflow only — GNOME workflows use the default theme) |
+| **Catppuccin Macchiato + Mauve** | GTK/Cinnamon Shell theme, Papirus icons, cursors, JetBrainsMono Nerd Font (Cinnamon 26 & GNOME 24.04 workflows — the Wayland BETA workflow uses the default theme) |
 | **safe-upgrade** | A drop-in replacement for `apt upgrade` that won't kill your session |
 
 Plus: timezone **Asia/Jakarta (WIB)**, screensaver & lock disabled. The
-Cinnamon 26 workflow ships the Catppuccin wallpaper and full theme; the
-`GNOME 24.04` and `GNOME 26 + CRD (Wayland BETA)` workflows are intentionally
-**vanilla** — 100% default GNOME/Ubuntu: no third-party themes, no desktop
-shortcuts (clean), and the default wallpaper.
+Cinnamon 26 **and** GNOME 24.04 workflows ship the Catppuccin wallpaper, full
+theme, and a Safe Upgrade desktop shortcut. Only `GNOME 26 + CRD (Wayland
+BETA)` is intentionally **vanilla** — 100% default GNOME/Ubuntu: no
+third-party themes, an empty desktop (no shortcuts), and the default wallpaper.
 
 ### Desktop variants
 
-| | **GNOME 26** | **Cinnamon 26** |
+| | **GNOME 24.04** | **Cinnamon 26** |
 |---|---|---|
-| Workflow | `.github/workflows/gnome26.yml` | `.github/workflows/cinnamon.yml` |
-| Desktop | GNOME (`ubuntu` session) | Cinnamon 6.4 (`cinnamon` session, X11) |
+| Workflow | `.github/workflows/gnome24.yml` | `.github/workflows/cinnamon.yml` |
+| Desktop | GNOME (`ubuntu` session, X11) | Cinnamon 6.4 (`cinnamon` session, X11) |
 | CRD device | `gnome` | `cinnamon` |
 | File manager | Nautilus | Nemo |
 | Note | Animations forced on via an extension | Animations may stay off because Cinnamon disables effects under software rendering (llvmpipe) |
 
-Both use the `ubuntu-26.04` runner, user `runner`, and the same web authorization
-flow. Pick either workflow when you run Actions.
+There is also an experimental **GNOME 26 + CRD (Wayland BETA)** variant
+(`.github/workflows/gnome26-wayland-beta.yml`): headless GNOME Shell on
+Wayland, `ubuntu-26.04` runner, a vanilla desktop, and a 1920x1080 virtual
+monitor.
+
+GNOME 24.04 & Cinnamon 26 run on `ubuntu-24.04`; Wayland BETA runs on
+`ubuntu-26.04`. User `runner` and the web authorization flow are the same.
+Pick either workflow when you run Actions.
 
 ---
 
@@ -147,7 +155,7 @@ Click **Fork** (top right) → **Create fork**.
 ### 3. Run the workflow (no auth input)
 
 1. Open the **Actions** tab in your fork.
-2. Select **GNOME 26** or **Cinnamon 26** in the left sidebar.
+2. Select **GNOME 24.04** (or **GNOME 26 + CRD (Wayland BETA)**) or **Cinnamon 26** in the left sidebar.
 3. Click **Run workflow** (top right).
 4. Leave **crd_host_command** **empty** — it is only a fallback.
 5. Click the green **Run workflow**.
@@ -186,9 +194,9 @@ The form shows live status. If registration fails (wrong, expired, or already
 used code), get a **NEW code** from the headless page and submit it again in the
 same form — **no workflow re-run needed** while the 30-minute window is open.
 
-The form has been refreshed: responsive two-column layout, Catppuccin
-**Auto / Light / Dark** theme (top-right button), and an **ID / EN** language
-toggle. A 4-step guide, status, countdown, progress bar, and command validation
+The form has been refreshed: responsive two-column layout, a **grayscale
+monochrome** theme with **Auto / Light / Dark** modes (top-right button), and
+an **ID / EN** language toggle. A 4-step guide, status, countdown, progress bar, and command validation
 are shown inline. Use **Paste**, **Clear**, or **Copy device name** to fill it
 faster, and <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd> to submit. Commands
 and OAuth codes are **not** stored in the browser; only the language/theme
@@ -215,9 +223,10 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
 | **Device** | `gnome` / `cinnamon` (depending on the workflow) |
 | **Duration** | up to ~6 hours, then the VM is shut down automatically |
 
-> The legacy **`gnome.yml`** workflow (RICH LINUX, Ubuntu 24.04) uses the old
-> flow: get the CRD command **before** running, then paste it into
-> `crd_host_command`. For the latest flow, use **GNOME 26** or **Cinnamon 26**.
+> The legacy **`gnome.yml`** workflow was **removed** from the repo. All active
+> workflows (`gnome24.yml`, `cinnamon.yml`, `gnome26-wayland-beta.yml`) use the
+> web authorization flow: get the CRD command **after** the desktop is ready,
+> then paste it into the form.
 
 ---
 
@@ -231,14 +240,16 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
   sudo safe-upgrade
   ```
 
-  There is also a **Safe Upgrade** shortcut on the Desktop. **Do not** run plain
-  `sudo apt upgrade -y` — it can restart Chrome Remote Desktop and drop your
-  session.
+  There is also a **Safe Upgrade** shortcut on the Desktop (GNOME 24.04 &
+  Cinnamon 26 workflows — Wayland BETA intentionally has none). **Do not** run
+  plain `sudo apt upgrade -y` — it can restart Chrome Remote Desktop and drop
+  your session.
 - **Run VMs (KVM):** use `virt-manager` (both variants), or **GNOME Boxes** on
   GNOME. x86 runners have KVM, so VMs run with hardware acceleration.
-- **Theme:** Catppuccin Macchiato (Mauve) is already active. On Cinnamon, change
-  it via **Themes** → *Desktop*; if `cinnamon.css` misbehaves, restore the
-  built-in theme with `gsettings set org.cinnamon.theme name ''`.
+- **Theme:** Catppuccin Macchiato (Mauve) is already active on the GNOME 24.04
+  & Cinnamon 26 workflows (Wayland BETA uses the default GNOME theme). On
+  Cinnamon, change it via **Themes** → *Desktop*; if `cinnamon.css` misbehaves,
+  restore the built-in theme with `gsettings set org.cinnamon.theme name ''`.
 
 ---
 
@@ -294,7 +305,7 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
 | The 30-minute window expired | The workflow stops. Re-run it; the `.deb` cache makes installation much faster. |
 | Device not shown in Remote Access | Wait until the log shows `[OK] CHROME REMOTE DESKTOP READY`. If it's still missing, refresh the page and check `systemctl status chrome-remote-desktop@runner`. |
 | Session drops while updating packages | You used plain `apt upgrade`. Use `sudo safe-upgrade`. |
-| Odd resolution / small screen | Locked to `1024x768` (native `dummy` driver mode). Adjust via *Settings → Displays*. |
+| Odd resolution / small screen | X11 variants lock to `1024x768` (native `dummy` driver mode); Wayland BETA uses a `1920x1080` virtual monitor. Adjust via *Settings → Displays*. |
 | `virt-manager`: libvirt "Permission denied" | Log out and back in to the desktop session, or run VMs via GNOME Boxes (GNOME variant). |
 | Cinnamon: black screen after connecting | Try the `cinnamon2d` fallback: change the `exec` line in `~/.chrome-remote-desktop-session` to `exec /usr/bin/cinnamon-session --session cinnamon2d`, then restart `chrome-remote-desktop@runner`. |
 | Cinnamon: animations don't run | Expected in the CRD session: Cinnamon 6.4 disables effects when it detects software rendering (llvmpipe). There is no `force_animations` override like GNOME Shell has. |
@@ -312,9 +323,9 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 .
 ├── .github/
 │   ├── workflows/
-│   │   ├── gnome26.yml          # main GNOME workflow (web auth form)
+│   │   ├── gnome24.yml          # main GNOME workflow (Ubuntu 24.04, X11)
 │   │   ├── cinnamon.yml         # Cinnamon 26 workflow (X11, device 'cinnamon')
-│   │   ├── gnome.yml            # legacy workflow (command at start)
+│   │   ├── gnome26-wayland-beta.yml # experimental (Wayland headless, BETA)
 │   │   └── lint.yml             # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml

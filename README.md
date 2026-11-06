@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml"><img src="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
   <a href="https://github.com/ArchDityaa/gnome-crd/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/runner-ubuntu--26.04-E95420.svg" alt="Runner: ubuntu-26.04">
+  <img src="https://img.shields.io/badge/runner-ubuntu--24.04%20%7C%20beta--26.04-E95420.svg" alt="Runner: ubuntu-24.04 (Wayland BETA: 26.04)">
   <img src="https://img.shields.io/badge/session-maks%206%20jam-orange.svg" alt="Session: maks 6 jam">
   <img src="https://img.shields.io/badge/desktop-GNOME-4A86CF.svg" alt="Desktop: GNOME">
   <img src="https://img.shields.io/badge/desktop-Cinnamon-7A2ECF.svg" alt="Desktop: Cinnamon">
@@ -53,7 +53,7 @@ flowchart LR
     A[Fork repo]:::action
     A --> B[Aktifkan Actions]:::action
     B --> C[Jalankan Workflow<br/>tanpa input auth]:::action
-    C --> D[Runner ubuntu-26.04<br/>GNOME / Cinnamon + Chrome]:::desktop
+    C --> D[Runner ubuntu-24.04<br/>GNOME / Cinnamon + Chrome]:::desktop
     D --> E[URL Form via<br/>Cloudflare Tunnel]:::action
     E --> F[Authorize di<br/>remotedesktop.google.com]:::access
     F --> G[Paste Perintah<br/>Debian ke Form]:::action
@@ -70,40 +70,47 @@ flowchart LR
 
 ## Apa yang Anda dapatkan
 
-Satu virtual machine **Ubuntu 26.04** (4 vCPU / 16 GB RAM) dengan desktop
+Satu virtual machine **Ubuntu** (4 vCPU / 16 GB RAM) dengan desktop
 **GNOME** atau **Cinnamon** yang sudah dikonfigurasi, hidup sampai **6 jam**,
 lalu otomatis mati. Setiap run adalah lingkungan bersih — selesai, hilang.
+Runner `ubuntu-24.04` untuk GNOME 24.04 & Cinnamon 26; `ubuntu-26.04` untuk
+GNOME 26 + CRD (Wayland BETA).
 
 | Sudah Terpasang | Keterangan |
 |---|---|
-| **GNOME Desktop** | Sesi penuh (`ubuntu` GNOME session), bukan XFCE — workflow `GNOME 26` |
+| **GNOME Desktop** | Sesi penuh (`ubuntu` GNOME session), bukan XFCE — workflow `GNOME 24.04` |
 | **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — workflow `Cinnamon 26` |
 | **Google Chrome** | Bisa langsung dipakai login akun Google |
 | **VS Code** | `code` |
 | **OpenCode CLI + Desktop** | CLI di `/usr/local/bin/opencode`, plus app desktop |
 | **Chrome Remote Desktop** | Jalur akses utamanya |
 | **virt-manager + libvirt/QEMU** | Untuk menjalankan VM di dalamnya (nested). GNOME juga menyertakan GNOME Boxes |
-| **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font (workflow Cinnamon 26 saja — workflow GNOME memakai tema default) |
+| **Catppuccin Macchiato + Mauve** | Theme GTK/Cinnamon Shell, ikon Papirus, kursor, font JetBrainsMono Nerd Font (workflow Cinnamon 26 & GNOME 24.04 — workflow Wayland BETA memakai tema default) |
 | **safe-upgrade** | Pengganti `apt upgrade` yang tidak memutus sesi |
 
 Plus: timezone **WIB (Asia/Jakarta)**, screensaver & lock dimatikan. Workflow
-Cinnamon 26 memakai wallpaper Catppuccin dan tema lengkap; workflow GNOME
-`GNOME 24.04` dan `GNOME 26 + CRD (Wayland BETA)` sengaja **vanilla** — 100%
-default GNOME/Ubuntu: tanpa tema pihak ketiga, tanpa shortcut di Desktop
-(clean), dan wallpaper default.
+Cinnamon 26 **dan** GNOME 24.04 memakai wallpaper Catppuccin, tema lengkap, dan
+shortcut Safe Upgrade di Desktop. Hanya `GNOME 26 + CRD (Wayland BETA)` yang
+sengaja **vanilla** — 100% default GNOME/Ubuntu: tanpa tema pihak ketiga,
+tanpa shortcut di Desktop (kosong), dan wallpaper default.
 
 ### Varian desktop
 
-| | **GNOME 26** | **Cinnamon 26** |
+| | **GNOME 24.04** | **Cinnamon 26** |
 |---|---|---|
-| Workflow | `.github/workflows/gnome26.yml` | `.github/workflows/cinnamon.yml` |
-| Desktop | GNOME (sesi `ubuntu`) | Cinnamon 6.4 (sesi `cinnamon`, X11) |
+| Workflow | `.github/workflows/gnome24.yml` | `.github/workflows/cinnamon.yml` |
+| Desktop | GNOME (sesi `ubuntu`, X11) | Cinnamon 6.4 (sesi `cinnamon`, X11) |
 | Device CRD | `gnome` | `cinnamon` |
 | File manager | Nautilus | Nemo |
 | Catatan | Animasi dipaksa hidup lewat ekstensi | Animasi bisa tetap off karena Cinnamon mematikan efek saat software rendering (llvmpipe) |
 
-Keduanya memakai runner `ubuntu-26.04`, user `runner`, dan alur otorisasi web yang
-sama. Pilih salah satu workflow saat menjalankan Actions.
+Ada juga varian eksperimental **GNOME 26 + CRD (Wayland BETA)**
+(`.github/workflows/gnome26-wayland-beta.yml`): GNOME Shell Wayland headless
+di runner `ubuntu-26.04`, desktop vanilla, virtual monitor 1920x1080.
+
+GNOME 24.04 & Cinnamon 26 memakai runner `ubuntu-24.04`; Wayland BETA memakai
+`ubuntu-26.04`. User `runner` dan alur otorisasi web sama. Pilih salah satu
+workflow saat menjalankan Actions.
 
 ---
 
@@ -147,7 +154,7 @@ repo hasil fork.
 ### 3. Jalankan workflow (tanpa input auth)
 
 1. Buka tab **Actions** di fork Anda.
-2. Pilih **GNOME 26** atau **Cinnamon 26** di sidebar kiri.
+2. Pilih **GNOME 24.04** (atau **GNOME 26 + CRD (Wayland BETA)**) atau **Cinnamon 26** di sidebar kiri.
 3. Klik **Run workflow** (kanan atas).
 4. Biarkan kolom **crd_host_command** **kosong** — kolom itu hanya fallback.
 5. Klik **Run workflow** (hijau).
@@ -187,8 +194,9 @@ kedaluwarsa, atau sudah terpakai), **ambil kode BARU** di halaman headless lalu
 submit lagi ke form yang sama — **tidak perlu re-run workflow** selama window
 30 menit masih berjalan.
 
-Tampilan form sudah diperbarui: layout dua kolom yang responsif, tema Catppuccin
-**Auto / Light / Dark** (tombol di kanan atas), dan toggle bahasa **ID / EN**.
+Tampilan form sudah diperbarui: layout dua kolom yang responsif, tema
+**grayscale monokrom** dengan mode **Auto / Light / Dark** (tombol di kanan
+atas), dan toggle bahasa **ID / EN**.
 Panduan 4 langkah, status, hitung mundur, progress bar, serta validasi format
 perintah tampil langsung. Gunakan **Paste**, **Clear**, atau **Copy device name**
 untuk mempercepat pengisian, dan <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd>
@@ -216,9 +224,9 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 | **Device** | `gnome` / `cinnamon` (sesuai workflow) |
 | **Durasi** | sampai ±6 jam, lalu VM dimatikan otomatis |
 
-> Workflow lama **`gnome.yml`** (RICH LINUX, Ubuntu 24.04) memakai alur lama:
-> ambil perintah CRD **sebelum** run, lalu paste ke input `crd_host_command`.
-> Untuk alur terbaru, gunakan **GNOME 26** atau **Cinnamon 26**.
+> Workflow lama **`gnome.yml`** sudah **dihapus** dari repo. Semua workflow
+> aktif (`gnome24.yml`, `cinnamon.yml`, `gnome26-wayland-beta.yml`) memakai alur
+> otorisasi web: ambil perintah CRD **setelah** desktop siap, lalu paste ke form.
 
 ---
 
@@ -232,14 +240,16 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
   sudo safe-upgrade
   ```
 
-  Ada juga shortcut **Safe Upgrade** di Desktop. **Jangan** pakai
+  Ada juga shortcut **Safe Upgrade** di Desktop (workflow GNOME 24.04 &
+  Cinnamon 26 — Wayland BETA sengaja tanpa shortcut). **Jangan** pakai
   `sudo apt upgrade -y` polos — itu bisa me-restart Chrome Remote Desktop dan
   memutus sesi Anda.
 - **Menjalankan VM (KVM):** `virt-manager` (kedua varian), atau **GNOME Boxes**
   di varian GNOME. Runner x86 punya KVM, jadi VM berjalan dengan akselerasi hardware.
-- **Theme:** Catppuccin Macchiato (Mauve) sudah aktif. Di Cinnamon, ganti lewat
-  **Themes** → *Desktop*; kalau `cinnamon.css` bermasalah, kembalikan tema bawaan
-  dengan `gsettings set org.cinnamon.theme name ''`.
+- **Theme:** Catppuccin Macchiato (Mauve) sudah aktif di workflow GNOME 24.04 &
+  Cinnamon 26 (Wayland BETA memakai tema default GNOME). Di Cinnamon, ganti
+  lewat **Themes** → *Desktop*; kalau `cinnamon.css` bermasalah, kembalikan
+  tema bawaan dengan `gsettings set org.cinnamon.theme name ''`.
 
 ---
 
@@ -295,7 +305,7 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 | Window 30 menit habis | Workflow berhenti. Jalankan ulang; cache `.deb` membuat instalasi jauh lebih cepat. |
 | Device tidak muncul di daftar Remote Access | Tunggu sampai log `[OK] CHROME REMOTE DESKTOP READY` muncul. Kalau masih tidak ada, refresh halaman dan cek service: `systemctl status chrome-remote-desktop@runner`. |
 | Sesi terputus saat update paket | Anda memakai `apt upgrade` polos. Pakai `sudo safe-upgrade`. |
-| Resolusi aneh / layar kecil | Dikunci ke `1024x768` (mode native driver `dummy`). Ubah lewat *Settings → Displays* bila perlu. |
+| Resolusi aneh / layar kecil | Varian X11 dikunci ke `1024x768` (mode native driver `dummy`); Wayland BETA memakai virtual monitor `1920x1080`. Ubah lewat *Settings → Displays* bila perlu. |
 | `virt-manager`: "Permission denied" pada libvirt | Log-out lalu log-in ulang di sesi desktop, atau jalankan VM lewat GNOME Boxes (varian GNOME). |
 | Cinnamon: layar hitam setelah connect | Coba fallback `cinnamon2d`: ubah baris `exec` di `~/.chrome-remote-desktop-session` menjadi `exec /usr/bin/cinnamon-session --session cinnamon2d`, lalu restart `chrome-remote-desktop@runner`. |
 | Cinnamon: animasi tidak jalan | Normal pada sesi CRD: Cinnamon 6.4 mematikan efek saat mendeteksi software rendering (llvmpipe). Tidak ada override seperti `force_animations` di GNOME Shell. |
@@ -313,10 +323,10 @@ Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots
 .
 ├── .github/
 │   ├── workflows/
-│   │   ├── gnome26.yml          # workflow utama GNOME (form otorisasi web)
-│   │   ├── cinnamon.yml         # workflow Cinnamon 26 (X11, device 'cinnamon')
-│   │   ├── gnome.yml            # workflow lama (input command di awal)
-│   │   └── lint.yml             # CI: actionlint + yamllint + shellcheck
+│   │   ├── gnome24.yml             # workflow utama GNOME (Ubuntu 24.04, X11)
+│   │   ├── cinnamon.yml            # workflow Cinnamon 26 (X11, device 'cinnamon')
+│   │   ├── gnome26-wayland-beta.yml # eksperimental (Wayland headless, BETA)
+│   │   └── lint.yml                # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml
 ├── scripts/

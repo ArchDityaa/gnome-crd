@@ -29,10 +29,11 @@ dapat menyebabkan akun Anda dibatasi.
 
 ## Kenapa GNOME/Cinnamon, bukan XFCE/Mate?
 
-Repo ini menyediakan dua varian desktop: **GNOME 26** dan **Cinnamon 26**. Keduanya
-punya workflow terpisah dan berbagi `scripts/` yang sama. Cinnamon dipilih sebagai
-alternatif ringan berbasis X11 (Cinnamon 6.4, Muffin, Nemo), sementara GNOME tetap
-varian utama. Struktur ini memudahkan penambahan desktop environment lain nanti.
+Repo ini menyediakan tiga varian desktop: **GNOME 24.04**, **Cinnamon 26**, dan
+**GNOME 26 + CRD (Wayland BETA)**. Masing-masing punya workflow terpisah dan
+berbagi `scripts/` yang sama. Cinnamon dipilih sebagai alternatif ringan
+berbasis X11 (Cinnamon 6.4, Muffin, Nemo), sementara GNOME tetap varian utama.
+Struktur ini memudahkan penambahan desktop environment lain nanti.
 
 ## Bisa install software sendiri di dalam sesi?
 
@@ -70,9 +71,10 @@ Workflow baru menunggu desktop siap, lalu menampilkan **form web**. Anda baru
 membuat kode setelah itu, lalu langsung paste ke form. Dengan begitu kode segar
 saat dipakai.
 
-## Bagaimana cara authorize di workflow GNOME 26 / Cinnamon 26?
+## Bagaimana cara authorize di workflow GNOME 24.04 / Wayland BETA / Cinnamon 26?
 
-1. Jalankan workflow **GNOME 26** atau **Cinnamon 26** tanpa input auth.
+1. Jalankan salah satu workflow (**GNOME 24.04**, **GNOME 26 + CRD (Wayland
+   BETA)**, atau **Cinnamon 26**) tanpa input auth.
 2. Tunggu sampai log menampilkan `[OK] FORM OTORISASI SIAP` (±20–40 menit).
 3. Buka URL form dari log atau **Job Summary**.
 4. Di tab lain, buka <https://remotedesktop.google.com/headless>, lalu
@@ -84,8 +86,8 @@ saat dipakai.
 
 ## Fitur apa saja yang ada di form web?
 
-Form web memakai layout responsif dua kolom dengan tema Catppuccin **Auto /
-Light / Dark** dan toggle bahasa **ID / EN**. Panduan 4 langkah, status
+Form web memakai layout responsif dua kolom dengan tema **grayscale monokrom**
+(Auto / Light / Dark) dan toggle bahasa **ID / EN**. Panduan 4 langkah, status
 registrasi, hitung mundur, progress bar, dan validasi format perintah tampil
 langsung di halaman. Tersedia tombol **Paste**, **Clear**, **Copy device name**,
 serta shortcut <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Enter</kbd> untuk submit.
@@ -149,9 +151,10 @@ terpisah.
 
 ## Kenapa resolusi terkunci 1024x768?
 
-Driver grafis `dummy` pada sesi CRD headless menyediakan `1024x768` sebagai mode
-native. Mode ini dipilih agar stabil dan tahan saat shell di-reload. Ubah lewat
-**Settings → Displays** untuk kebutuhan sementara.
+Workflow varian X11 (GNOME 24.04 & Cinnamon 26) mengunci resolusi `1024x768`,
+mode native driver grafis `dummy` pada sesi CRD headless. Mode ini dipilih agar
+stabil dan tahan saat shell di-reload. Ubah lewat **Settings → Displays** untuk
+kebutuhan sementara. Workflow Wayland BETA berbeda: virtual monitor 1920x1080.
 
 ## Bagaimana memperbarui fork saya dengan perbaikan terbaru?
 
@@ -164,14 +167,18 @@ Karena harus mengunduh dan memasang desktop (GNOME atau Cinnamon), Chrome, VS
 Code, CRD, theme, dan font (beberapa GB). Setelah run pertama, cache `.deb`
 tersimpan sehingga run berikutnya (dan re-run) jauh lebih cepat.
 
-## Apa bedanya `gnome26.yml`, `cinnamon.yml`, dan `gnome.yml`?
+## Apa beda antar workflow?
 
-- **`gnome26.yml` (GNOME 26)** — alur terbaru, Ubuntu 26.04, sesi GNOME X11,
-  form otorisasi web setelah desktop siap.
-- **`cinnamon.yml` (Cinnamon 26)** — Ubuntu 26.04, Cinnamon 6.4 X11 + Nemo +
-  Muffin, form otorisasi web yang sama, device `cinnamon`.
-- **`gnome.yml` (RICH LINUX)** — alur lama, Ubuntu 24.04, perintah CRD diambil
-  **sebelum** run lalu di-paste ke input `crd_host_command`.
+- **`gnome24.yml` (GNOME 24.04)** — varian utama, runner `ubuntu-24.04`, sesi
+  GNOME X11, form otorisasi web setelah desktop siap, device `gnome`, tema
+  Catppuccin + wallpaper + shortcut Safe Upgrade di Desktop.
+- **`cinnamon.yml` (Cinnamon 26)** — runner `ubuntu-24.04`, Cinnamon 6.4 X11 +
+  Nemo + Muffin, form otorisasi web yang sama, device `cinnamon`, tema
+  Catppuccin + wallpaper + shortcut di Desktop.
+- **`gnome26-wayland-beta.yml` (GNOME 26 + CRD, Wayland BETA)** — eksperimental,
+  runner `ubuntu-26.04`, GNOME Shell Wayland headless, desktop **vanilla**
+  (tanpa tema/shortcut, wallpaper default), virtual monitor 1920x1080.
+- Alur lama `gnome.yml` sudah **dihapus** dari repo.
 
 ## Kenapa animasi Cinnamon tidak muncul di sesi CRD?
 
@@ -197,5 +204,6 @@ di dalam sesi dan meneruskan portnya lewat tunnel. Di luar cakupan repo ini.
 ## Sesi saya putus saat menjalankan `apt upgrade`, kenapa?
 
 `apt upgrade` memicu needrestart yang me-restart `chrome-remote-desktop@runner`
-dan/atau `gnome-shell`/`cinnamon`. Gunakan `sudo safe-upgrade` (sudah dipasang,
-juga ada shortcut di Desktop) yang mencegah restart otomatis.
+dan/atau `gnome-shell`/`cinnamon`. Gunakan `sudo safe-upgrade` (sudah dipasang;
+di workflow GNOME 24.04 & Cinnamon 26 juga ada shortcut di Desktop) yang
+mencegah restart otomatis.
