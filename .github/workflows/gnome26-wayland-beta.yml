@@ -718,9 +718,31 @@ jobs:
           sudo -u runner dbus-launch --exit-with-session gsettings set org.gnome.desktop.screensaver idle-activation-enabled false || true
           sudo -u runner dbus-launch --exit-with-session gsettings set org.gnome.desktop.session idle-delay 0 || true
           sudo -u runner dbus-launch --exit-with-session gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' || true
+
+          # ----------------------------------------------------------
+          # Dark theme otomatis (GNOME 26):
+          #   color-scheme="prefer-dark" -> semua app libadwaita gelap,
+          #   gtk-theme="Yaru-dark"      -> app legacy GTK3 ikut gelap.
+          # Wallpaper tidak diubah; Ubuntu otomatis memakai varian gelap
+          # (picture-uri-dark, default adwaita-d.jxl).
+          # ----------------------------------------------------------
+          echo -e "${C_YELLOW}[INFO] Enabling dark theme system-wide via dconf...${C_NC}"
+          sudo mkdir -p /etc/dconf/db/local.d || true
+          sudo tee /etc/dconf/db/local.d/97-crd-dark-mode > /dev/null <<'EOF'
+          [org/gnome/desktop/interface]
+          color-scheme='prefer-dark'
+          gtk-theme='Yaru-dark'
+          EOF
+          sudo dconf update || true
+
+          # Fallback per-user gsettings untuk 'runner' (dipakai saat CRD session menyala).
+          sudo -u runner dbus-launch --exit-with-session gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
+          sudo -u runner dbus-launch --exit-with-session gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark' || true
+
           sudo chown -R runner:runner /home/runner/.config || true
 
           echo -e "${C_GREEN}[OK] Screensaver, lock, and suspend disabled.${C_NC}"
+          echo -e "${C_GREEN}[OK] Dark theme aktif (prefer-dark + Yaru-dark).${C_NC}"
 
 
       # ============================================================
@@ -1455,9 +1477,9 @@ jobs:
           fi
           echo "::endgroup::"
 
-          echo "::group::[CHECK] Default GNOME appearance (vanilla, no Catppuccin)"
-          # Desktop harus 100% default GNOME/Ubuntu: tanpa tema/kursor/font/
-          # ikon pihak ketiga, tanpa wallpaper kustom, dan Desktop kosong.
+          echo "::group::[CHECK] Default GNOME appearance (vanilla, dark mode, no Catppuccin)"
+          # Desktop 100% default GNOME/Ubuntu (tanpa tema pihak ketiga) tapi
+          # wajib dark mode: color-scheme='prefer-dark' + gtk-theme='Yaru-dark'.
           if ls -d /home/runner/.themes/catppuccin* 2>/dev/null || \
              ls -d /home/runner/.icons/catppuccin* 2>/dev/null; then
             echo "[FAIL] Masih ada sisa aset Catppuccin."
@@ -1474,6 +1496,24 @@ jobs:
           else
             echo -e "${C_GREEN}[OK] Desktop bersih (tanpa ikon/shortcut aplikasi).${C_NC}"
           fi
+          # Assert dark mode aktif untuk user 'runner'.
+          COLOR_SCHEME="$(sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || true)"
+          if [ "$COLOR_SCHEME" = "'prefer-dark'" ]; then
+            echo -e "${C_GREEN}[OK] color-scheme = prefer-dark (dark mode aktif).${C_NC}"
+          else
+            echo "[FAIL] color-scheme bukan prefer-dark (dapat: ${COLOR_SCHEME:-kosong})"
+            exit 1
+          fi
+          GTK_THEME_VAL="$(sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null || true)"
+          case "$GTK_THEME_VAL" in
+            *Yaru-dark*)
+              echo -e "${C_GREEN}[OK] gtk-theme = $GTK_THEME_VAL (dark theme GTK3).${C_NC}"
+              ;;
+            *)
+              echo "[FAIL] gtk-theme bukan Yaru-dark (dapat: ${GTK_THEME_VAL:-kosong})"
+              exit 1
+              ;;
+          esac
           for key in gtk-theme icon-theme cursor-theme font-name document-font-name monospace-font-name; do
             echo -n "$key = "
             sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.interface "$key" || true
