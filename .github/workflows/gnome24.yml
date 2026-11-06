@@ -40,7 +40,7 @@ on:
 
 jobs:
   build:
-    runs-on: colab-runner
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
 
     steps:
