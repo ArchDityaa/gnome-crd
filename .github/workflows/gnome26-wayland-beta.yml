@@ -1626,14 +1626,17 @@ jobs:
 
           # P1b: flag konfigurasi host CRD. Kalau versi CRD baru berhenti
           # menghormati flag Wayland (fallback ke sesi X legacy sendiri),
-          # di sini kelihatan key yang relevan di host.json.
-          HOST_JSON="/home/runner/.config/chrome-remote-desktop/host.json"
-          echo "::group::[CONFIG] host.json: daftar key + flag wayland/x-session/display"
-          if [ -f "$HOST_JSON" ]; then
+          # di sini kelihatan key yang relevan. Nama file config CRD versi
+          # baru memakai hash: host#<hash>.json, jadi lookup pakai glob host*.
+          HOST_JSON="$(ls -1 /home/runner/.config/chrome-remote-desktop/host*.json 2>/dev/null | head -n 1 || true)"
+          echo "::group::[CONFIG] host CRD: config aktif, versi, flag wayland/x-session/display"
+          if [ -n "$HOST_JSON" ] && [ -f "$HOST_JSON" ]; then
+            echo "      config: $(basename "$HOST_JSON")"
             echo "      keys: $(grep -oE '"[a-zA-Z_]+":' "$HOST_JSON" | tr -d '\":' | tr '\n' ' ' || true)"
             grep -oE '"[a-zA-Z_]*(wayland|experimental|x_session|display)[a-zA-Z_]*": ?[^,}]+' "$HOST_JSON" | sed 's/^/      /' || echo "      (tidak ada key wayland/experimental/x_session/display)"
+            echo "      CRD terinstall: $(dpkg-query -W -f='${Version}' chrome-remote-desktop 2>/dev/null || echo '?')"
           else
-            echo "      host.json tidak ditemukan di $HOST_JSON"
+            echo "      config host*.json tidak ditemukan di /home/runner/.config/chrome-remote-desktop/"
           fi
           echo "::endgroup::"
 
