@@ -1262,11 +1262,6 @@ jobs:
 
           echo -e "${C_GREEN}[OK] Perintah berhasil didaftarkan.${C_NC}"
 
-          # Beri browser kesempatan polling terakhir sebelum tunnel dimatikan.
-          sleep 5
-          cleanup_tunnel
-          echo -e "${C_YELLOW}[INFO] Form otorisasi ditutup.${C_NC}"
-
           # Fallback: `start-host` mencoba `sudo`/`pkexec systemctl enable --now
           # chrome-remote-desktop@<user>`. Tapi tanpa TTY (seperti di runner
           # ini, stdin diarahkan ke /dev/null) metode itu bisa gagal senyap,
@@ -1280,12 +1275,26 @@ jobs:
             echo -e "${C_RED}[FAIL] chrome-remote-desktop@runner tidak aktif.${C_NC}"
             systemctl status chrome-remote-desktop@runner --no-pager || true
             sudo journalctl -u chrome-remote-desktop@runner -n 150 --no-pager || true
+            # [FIX] Status gagal dikirim SEKARANG, saat tunnel masih hidup,
+            # supaya browser user benar-benar menerima status "Gagal".
             python3 "$SERVER" set-status failed \
               "Service CRD tidak aktif. Lihat log workflow (Wayland BETA)." \
               --error "chrome-remote-desktop@runner inactive" || true
             exit 1
           fi
           echo -e "${C_GREEN}[OK] chrome-remote-desktop@runner aktif.${C_NC}"
+
+          # [FIX] Kirim status success SAAT tunnel masih hidup. Dulu status ini
+          # dikirim di akhir (setelah cleanup_tunnel), sehingga browser tidak
+          # pernah menerima "Berhasil" -> form tampak loading tanpa status.
+          python3 "$SERVER" set-status success \
+            "Berhasil! Buka https://remotedesktop.google.com/access dan pilih device 'gnome'." || true
+
+          # [FIX] Window polling browser dinaikkan: dulu sleep 5 yang sering
+          # terlalu singkat (interval polling form 2-10s + warm-up tunnel).
+          sleep 20
+          cleanup_tunnel
+          echo -e "${C_YELLOW}[INFO] Form otorisasi ditutup.${C_NC}"
 
           # Verifikasi bahwa GNOME Shell benar-benar menjadi compositor
           # Wayland headless. Tanpa WAYLAND_DISPLAY di systemd user env,
@@ -1320,9 +1329,13 @@ jobs:
             pgrep -a chrome-remote || true
             ls -la "/run/user/$RUNNER_UID" | head -n 40 || true
             echo "::endgroup::"
-            python3 "$SERVER" set-status failed \
-              "GNOME Wayland gagal start. Workflow BETA ini belum berhasil di runner." \
-              --error "WAYLAND_DISPLAY tidak muncul / socket tidak ada" || true
+            # Fail-late: status "success" sudah terdelivery ke browser sebelum
+            # tunnel ditutup, jadi jangan menimpanya dengan "failed" di sini.
+            if [ "$(python3 "$SERVER" get-state)" != "success" ]; then
+              python3 "$SERVER" set-status failed \
+                "GNOME Wayland gagal start. Workflow BETA ini belum berhasil di runner." \
+                --error "WAYLAND_DISPLAY tidak muncul / socket tidak ada" || true
+            fi
             exit 1
           fi
 
@@ -1334,9 +1347,8 @@ jobs:
           echo "--- CRD host readiness ---"
           sudo journalctl -u chrome-remote-desktop@runner -n 40 --no-pager || true
 
-          python3 "$SERVER" set-status success \
-            "Berhasil! Buka https://remotedesktop.google.com/access dan pilih device 'gnome'." || true
-
+          # Status success sudah dikirim ke form saat tunnel masih hidup
+          # (lihat sebelum cleanup_tunnel). Jangan kirim ulang di sini.
           echo ""
           echo "=============================================================="
           echo -e "${C_GREEN}      [OK] CHROME REMOTE DESKTOP READY (WAYLAND BETA)${C_NC}"
@@ -1611,8 +1623,10 @@ jobs:
               EXTRA_PIDS="$EXTRA_PIDS $p"
               EXTRA_COUNT=$(( EXTRA_COUNT + 1 ))
             done
-            # Jejak server-X / compositor X (sesi legacy CRD).
-            X_PROCS="$(pgrep -a -x 'Xvfb|Xwayland' 2>/dev/null || true)"
+            # Jejak server-X legacy (sesi CRD mode X11 lama). Xwayland TIDAK
+            # dihitung: gnome-shell Wayland memang spawn Xwayland untuk app
+            # X11 (Chrome, dll) — itu normal, bukan fallback/headless error.
+            X_PROCS="$(pgrep -a -x 'Xvfb' 2>/dev/null || true)"
           }
 
           echo ""
@@ -1736,7 +1750,7 @@ jobs:
               LAST_EXTRA_PIDS=""
             fi
             if [ -n "$X_PROCS" ]; then
-              echo -e "  ${C_RED}[WARN] proses X-server hidup (bukan Wayland headless):${C_NC}"
+              echo -e "  ${C_RED}[WARN] proses Xvfb hidup (sesi legacy X, bukan Wayland headless):${C_NC}"
               printf '%s\n' "$X_PROCS" | sed 's/^/      /'
             fi
 

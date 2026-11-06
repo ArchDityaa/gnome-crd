@@ -1464,8 +1464,9 @@ jobs:
             "Berhasil! Buka https://remotedesktop.google.com/access dan pilih device 'cinnamon'." || true
           echo -e "${C_GREEN}[OK] Perintah berhasil didaftarkan.${C_NC}"
 
-          # Beri browser kesempatan polling terakhir sebelum tunnel dimatikan.
-          sleep 5
+          # Beri browser window polling yang memadai sebelum tunnel dimatikan
+          # (interval polling form 2-10s + jeda warm-up jaringan).
+          sleep 20
           cleanup_tunnel
           echo -e "${C_YELLOW}[INFO] Form otorisasi ditutup.${C_NC}"
 

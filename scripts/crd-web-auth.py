@@ -1124,6 +1124,7 @@ PAGE_TEMPLATE = r"""<!doctype html>
       "status.updated": "Diperbarui {time}",
       "status.remaining": "Sisa {time}",
       "status.expired": "Waktu habis",
+      "status.lost": "Koneksi ke form terputus. Kalau ini terjadi setelah submit, registrasi kemungkinan berhasil — buka Remote Access untuk memastikan device sudah muncul.",
       "status.detail": "Detail: {detail}",
       "success.title": "Berhasil terhubung",
       "success.desc": "Perangkat sudah terdaftar di akun Google Anda. Tinggal buka Remote Access dan masukkan PIN.",
@@ -1222,6 +1223,7 @@ PAGE_TEMPLATE = r"""<!doctype html>
       "status.updated": "Updated {time}",
       "status.remaining": "{time} left",
       "status.expired": "Expired",
+      "status.lost": "Lost connection to the form. If this happened right after submitting, registration most likely succeeded — check Remote Access to confirm the device.",
       "status.detail": "Detail: {detail}",
       "success.title": "Connected successfully",
       "success.desc": "The device is registered to your Google account. Open Remote Access and enter your PIN.",
@@ -1701,6 +1703,11 @@ PAGE_TEMPLATE = r"""<!doctype html>
       renderStatus(data);
     }).catch(function () {
       if (ui.lastState !== "success") setConnection(false);
+      var inFlight = ui.lastState === "queued" || ui.lastState === "registering" || ui.lastState === "sending";
+      if (inFlight) {
+        var lostMsg = $("#status-message");
+        if (lostMsg) lostMsg.textContent = t("status.lost");
+      }
     }).then(function () {
       if (timer) clearTimeout(timer);
       ui.polling = false;
