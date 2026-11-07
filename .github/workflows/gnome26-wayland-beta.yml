@@ -603,9 +603,17 @@ jobs:
           # Paksa environment user manager ke Wayland. Tanpa ini,
           # org.gnome.Shell@.service bisa menolak start karena
           # AssertEnvironment=XDG_SESSION_TYPE=wayland.
+          # PENTING: XDG_CURRENT_DESKTOP wajib "ubuntu:GNOME", BUKAN "GNOME".
+          # GSettings memakai variabel ini untuk memilih session mode, yaitu
+          # bagian [schema:ubuntu] di /usr/share/glib-2.0/schemas/
+          # 10_ubuntu-settings.gschema.override. Dengan "GNOME" saja, override
+          # wallpaper Ubuntu tidak berlaku dan GNOME jatuh ke default upstream
+          # adwaita-l.jxl / adwaita-d.jxl — file itu TIDAK ada karena paket
+          # gnome-backgrounds tidak terpasang di Ubuntu. Akibatnya GNOME Shell
+          # hanya menggambar primary-color #023c88 (biru) sebagai latar.
           as_runner systemctl --user set-environment \
             XDG_SESSION_TYPE=wayland \
-            XDG_CURRENT_DESKTOP=GNOME \
+            XDG_CURRENT_DESKTOP=ubuntu:GNOME \
             XDG_SESSION_DESKTOP=ubuntu
           as_runner systemctl --user unset-environment \
             WAYLAND_DISPLAY DISPLAY XAUTHORITY GNOME_SETUP_DISPLAY 2>/dev/null || true
@@ -648,6 +656,7 @@ jobs:
           [Service]
           Environment=CHROME_REMOTE_DESKTOP_USE_WAYLAND=GNOME
           Environment=XDG_SESSION_TYPE=wayland
+          Environment=XDG_CURRENT_DESKTOP=ubuntu:GNOME
           Environment=XDG_RUNTIME_DIR=/run/user/$RUNNER_UID
           Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$RUNNER_UID/bus
           Environment=LIBGL_ALWAYS_SOFTWARE=1
@@ -723,8 +732,12 @@ jobs:
           # Dark theme otomatis (GNOME 26):
           #   color-scheme="prefer-dark" -> semua app libadwaita gelap,
           #   gtk-theme="Yaru-dark"      -> app legacy GTK3 ikut gelap.
-          # Wallpaper tidak diubah; Ubuntu otomatis memakai varian gelap
-          # (picture-uri-dark, default adwaita-d.jxl).
+          # Wallpaper tidak diubah; dengan session mode "ubuntu" (lihat
+          # XDG_CURRENT_DESKTOP=ubuntu:GNOME di step 09) Ubuntu otomatis
+          # memakai varian gelap:
+          #   picture-uri-dark = file:///usr/share/backgrounds/ubuntu-wallpaper-d.png
+          # Ini BUKAN adwaita-d.jxl milik GNOME: paket gnome-backgrounds tidak
+          # terpasang, jadi file adwaita-*.jxl memang tidak ada di sistem.
           # ----------------------------------------------------------
           echo -e "${C_YELLOW}[INFO] Enabling dark theme system-wide via dconf...${C_NC}"
           sudo mkdir -p /etc/dconf/db/local.d || true
@@ -1518,15 +1531,45 @@ jobs:
             echo -n "$key = "
             sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.interface "$key" || true
           done
-          echo -n "picture-uri = "
-          sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.background picture-uri || true
-          PICTURE_URI="$(sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.background picture-uri 2>/dev/null || true)"
-          if echo "$PICTURE_URI" | grep -qiE 'catppuccin|wallpaper\.png'; then
-            echo "[FAIL] Wallpaper bukan default GNOME/Ubuntu."
-            exit 1
-          else
-            echo -e "${C_GREEN}[OK] Wallpaper default GNOME/Ubuntu (bukan Catppuccin/kustom).${C_NC}"
-          fi
+          # Cek "bukan Catppuccin" saja tidak memadai: kalau URI menunjuk file
+          # yang tidak ada, GNOME Shell (js/ui/background.js) TIDAK menggambar
+          # gambar sama sekali dan hanya memakai primary-color #023c88 ->
+          # seluruh layar jadi biru solid. Jadi validasi juga file-nya ada,
+          # untuk varian light maupun dark (picture-uri / picture-uri-dark).
+          #
+          # Session mode harus memuat "ubuntu". Kalau hanya "GNOME", bagian
+          # [org.gnome.desktop.background:ubuntu] di 10_ubuntu-settings.
+          # gschema.override tidak berlaku, GNOME turun ke default upstream
+          # adwaita-l/d.jxl — file itu tidak ada di Ubuntu (gnome-backgrounds
+          # tidak terpasang) — dan layar menjadi biru #023c88.
+          SHELL_PID="$(pgrep -x gnome-shell | head -n1)"
+          LIVE_DESKTOP="$(tr '\0' '\n' < "/proc/${SHELL_PID}/environ" 2>/dev/null | sed -n 's/^XDG_CURRENT_DESKTOP=//p')"
+          echo "XDG_CURRENT_DESKTOP (gnome-shell) = ${LIVE_DESKTOP:-<kosong>}"
+          case "$LIVE_DESKTOP" in
+            *ubuntu*)
+              ;;
+            *)
+              echo "[FAIL] gnome-shell tidak berjalan dalam session mode ubuntu."
+              echo "       Override wallpaper Ubuntu tidak dipakai (risiko layar biru #023c88)."
+              exit 1
+              ;;
+          esac
+          for key in picture-uri picture-uri-dark; do
+            echo -n "$key = "
+            BG_URI="$(sudo -u runner env XDG_CURRENT_DESKTOP=ubuntu:GNOME dbus-run-session -- gsettings get org.gnome.desktop.background "$key" 2>/dev/null || true)"
+            echo "$BG_URI"
+            if echo "$BG_URI" | grep -qiE 'catppuccin'; then
+              echo "[FAIL] Wallpaper bukan default Ubuntu ($key)."
+              exit 1
+            fi
+            BG_PATH="$(printf '%s' "$BG_URI" | tr -d "'" | sed 's|^file://||')"
+            if [ ! -f "$BG_PATH" ]; then
+              echo "[FAIL] File wallpaper tidak ada untuk $key: ${BG_PATH:-<kosong>}"
+              echo "       Efeknya: GNOME Shell menampilkan warna solid #023c88 (biru)."
+              exit 1
+            fi
+          done
+          echo -e "${C_GREEN}[OK] Wallpaper default Ubuntu ada di disk (light + dark).${C_NC}"
           echo "::endgroup::"
 
           echo "::group::[CHECK] timezone (Asia/Jakarta)"
