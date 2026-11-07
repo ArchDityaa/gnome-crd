@@ -276,6 +276,8 @@ jobs:
             libvirt-daemon-system \
             libvirt-clients \
             virtinst \
+            xclip \
+            fastfetch \
             virt-manager \
             gnome-boxes
 
