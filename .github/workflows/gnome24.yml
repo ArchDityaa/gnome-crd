@@ -59,7 +59,7 @@ jobs:
       # tidak mengunduh ulang ~GB. Solusi resmi: pisah restore + save, dan
       # save pakai `if: always()` (lihat step "Save apt package cache").
       - name: Restore apt package cache (re-run cepat, tak unduh ulang ~GB)
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: /home/runner/apt-archives
           key: apt-ubuntu-2404-${{ steps.dated.outputs.today }}
@@ -511,7 +511,7 @@ jobs:
       - name: Save apt package cache
         if: always()
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: /home/runner/apt-archives
           key: apt-ubuntu-2404-${{ steps.dated.outputs.today }}
