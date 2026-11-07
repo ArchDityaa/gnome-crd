@@ -517,6 +517,20 @@ jobs:
             -o Dpkg::Use-Pty=0 \
             chrome-remote-desktop
 
+          # CRD menjalankan instance PipeWire sendiri (crd_audio) dan menunjuk
+          # Mutter ke sana lewat PIPEWIRE_REMOTE. Template bawaannya hanya
+          # memetakan audio.convert; tanpa video.convert, PipeWire tidak bisa
+          # menyisipkan adapter saat format video Mutter dan consumer CRD
+          # berbeda -> "pipewire remote error: no more input formats" dan
+          # layar blank/hitam. Tambahkan mapping standar (idempoten; file
+          # vendor bisa berubah lagi saat paket CRD di-upgrade).
+          PW_TEMPLATE=/opt/google/chrome-remote-desktop/pipewire.conf.template
+          if [ -f "$PW_TEMPLATE" ] && ! sudo grep -q 'video\.convert' "$PW_TEMPLATE"; then
+            sudo sed -i '/audio\.convert\.\*/a\    video.convert.* = videoconvert/libspa-videoconvert' "$PW_TEMPLATE"
+            echo -e "${C_YELLOW}[INFO] Ditambahkan video.convert ke template PipeWire CRD.${C_NC}"
+          fi
+          sudo grep -A4 'context.spa-libs' "$PW_TEMPLATE" || true
+
           echo -e "${C_GREEN}[OK] Chrome Remote Desktop installed.${C_NC}"
 
       # Simpan arsip .deb ke cache GitHub SEKARANG (sebelum register) —
@@ -1711,6 +1725,145 @@ jobs:
 
 
       # ============================================================
+      # DESKTOP PROOF — bukti render + diagnostik black screen
+      #
+      # Kasus yang pernah terjadi: CRD host aktif, shell aktif, portal aktif,
+      # tetapi client hanya melihat layar hitam. Step ini memisahkan
+      # "compositor tidak merender" dari "stream CRD/PipeWire mati":
+      #   - rekam 4 detik lewat D-Bus org.gnome.Shell.Screencast (jalur
+      #     berbeda dari stream CRD), simpan PNG + webm sebagai artifact;
+      #   - cetak link PipeWire gnome-shell -> chrome-remote-desktop-host
+      #     beserta format yang diiklankan;
+      #   - cetak error journal shell yang relevan.
+      # ============================================================
+      - name: Capture desktop proof (diagnostik)
+        if: always()
+        run: |
+          C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_YELLOW='\033[1;33m'; C_NC='\033[0m'
+
+          RUNNER_UID=$(id -u runner)
+          OUT_DIR="${GITHUB_WORKSPACE:-/tmp}"
+          WEBM="$OUT_DIR/desktop-proof.webm"
+          PNG="$OUT_DIR/desktop-proof.png"
+          rm -f "$WEBM" "$PNG"
+
+          as_runner() {
+            sudo -u runner env \
+              XDG_RUNTIME_DIR="/run/user/$RUNNER_UID" \
+              DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$RUNNER_UID/bus" \
+              "$@"
+          }
+
+          echo ""
+          echo "------------------------------------------------------------"
+          echo -e "${C_CYAN}[STEP 15b] DESKTOP PROOF (DIAGNOSTIK)${C_NC}"
+          echo "------------------------------------------------------------"
+
+          echo "::group::[PROOF] PipeWire graph (gnome-shell vs CRD host)"
+          as_runner env PIPEWIRE_REMOTE=crd_audio/pipewire pw-link -l || true
+          as_runner env PIPEWIRE_REMOTE=crd_audio/pipewire pw-dump > /tmp/pw-dump.json 2>/dev/null || true
+          python3 - /tmp/pw-dump.json <<'PYPROOF' || true
+          import json, sys
+          try:
+              data = json.load(open(sys.argv[1]))
+          except Exception as exc:
+              print("pw-dump tidak tersedia:", exc)
+              sys.exit(0)
+          for obj in data:
+              if obj.get("type") != "PipeWire:Interface:Node":
+                  continue
+              info = obj.get("info", {})
+              name = info.get("props", {}).get("node.name", "")
+              if name not in ("gnome-shell", "chrome-remote-desktop-host"):
+                  continue
+              print("node", name, "id", obj.get("id"))
+              for fmt in info.get("params", {}).get("EnumFormat", [])[:4]:
+                  keys = ("mediaType", "format", "size", "colorPrimaries", "transferFunction")
+                  print("  ", {k: fmt[k] for k in keys if k in fmt})
+          PYPROOF
+          echo "::endgroup::"
+
+          echo "::group::[PROOF] Rekam 4 detik via org.gnome.Shell.Screencast"
+          if as_runner gdbus call --session \
+               --dest org.gnome.Shell.Screencast \
+               --object-path /org/gnome/Shell/Screencast \
+               --method org.gnome.Shell.Screencast.Screencast \
+               "$WEBM" "{}" > /tmp/screencast.out 2>&1; then
+            sleep 4
+            as_runner gdbus call --session \
+              --dest org.gnome.Shell.Screencast \
+              --object-path /org/gnome/Shell/Screencast \
+              --method org.gnome.Shell.Screencast.StopScreencast > /dev/null 2>&1 || true
+            echo "[OK] rekaman dibuat: $(stat -c%s "$WEBM" 2>/dev/null || echo 0) byte"
+          else
+            echo "::warning::Screencast D-Bus gagal: $(tail -n1 /tmp/screencast.out 2>/dev/null)"
+          fi
+          echo "::endgroup::"
+
+          if [ -s "$WEBM" ]; then
+            gst-launch-1.0 -q filesrc location="$WEBM" ! decodebin ! videoconvert ! pngenc ! filesink location="$PNG" > /tmp/gst.out 2>&1 || true
+          fi
+
+          if [ -f "$PNG" ]; then
+            echo -e "${C_GREEN}[OK] Frame tersimpan: $(basename "$PNG") ($(stat -c%s "$PNG") byte)${C_NC}"
+            python3 - "$PNG" <<'PYPROOF' || true
+          import sys
+          try:
+              from gi.repository import GdkPixbuf
+          except Exception as exc:
+              print("GdkPixbuf tidak tersedia:", exc)
+              sys.exit(0)
+          pb = GdkPixbuf.Pixbuf.new_from_file(sys.argv[1])
+          width, height = pb.get_width(), pb.get_height()
+          pixels = pb.get_pixels()
+          rowstride = pb.get_rowstride()
+          channels = pb.get_n_channels()
+          total = 0
+          count = 0
+          peak = 0
+          for y in range(0, height, 16):
+              for x in range(0, width, 16):
+                  idx = y * rowstride + x * channels
+                  r, g, b = pixels[idx], pixels[idx + 1], pixels[idx + 2]
+                  total += r + g + b
+                  count += 1
+                  peak = max(peak, r, g, b)
+          avg = total / (count * 3) if count else 0
+          print(f"frame={width}x{height} average_brightness={avg:.1f} peak={peak}")
+          if avg < 5:
+              print("::warning::Frame hampir hitam - compositor tidak merender atau pemandangan memang gelap.")
+          PYPROOF
+          else
+            echo "::warning::Tidak ada frame yang berhasil diekstrak (compositor/PipeWire bermasalah)."
+          fi
+
+          CRASH_DIR="/run/user/$RUNNER_UID/crd_crashpad/completed"
+          if find "$CRASH_DIR" -maxdepth 1 -name '*.dmp' 2>/dev/null | grep -q .; then
+            mkdir -p "$OUT_DIR/crash-dumps"
+            find "$CRASH_DIR" -maxdepth 1 -name '*.dmp' -exec cp {} "$OUT_DIR/crash-dumps/" \; 2>/dev/null || true
+            echo "[OK] crash dump disalin: $(find "$OUT_DIR/crash-dumps" -name '*.dmp' | wc -l) file"
+          fi
+
+          echo "::group::[PROOF] journal shell (error/screencast/pipewire)"
+          as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 200 --no-pager 2>/dev/null \
+            | grep -iE "pipewire|screencast|error|crash" | tail -n 15 || true
+          echo "::endgroup::"
+
+      - name: Upload desktop proof (artifact)
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-proof-${{ github.run_id }}
+          path: |
+            desktop-proof.png
+            desktop-proof.webm
+            crash-dumps/*.dmp
+          if-no-files-found: warn
+          retention-days: 3
+
+
+      # ============================================================
       # KEEP ALIVE — MONITOR LOOP + INSTRUMEN DIAGNOSTIK WAYLAND
       #
       # Bukan sekadar `sleep`. Sejak kasus "awalnya normal, lalu tiba-tiba
@@ -1753,6 +1906,8 @@ jobs:
           LAST_HOST_RESTART=0         # epoch restart host terakhir
           LAST_SHELL_PID=""           # pid shell terakhir yang teramati
           LAST_EXTRA_PIDS=""          # daftar pid shell ekstra dari heartbeat sebelumnya
+          CRASH_DIR="/run/user/$(id -u runner)/crd_crashpad/completed"
+          LAST_CRASH_COUNT="$(find "$CRASH_DIR" -maxdepth 1 -name '*.dmp' 2>/dev/null | wc -l | tr -d ' ')"
 
           get_shell_pid() {
             as_runner systemctl --user show -p MainPID --value org.gnome.Shell@ubuntu.service 2>/dev/null || true
@@ -1835,6 +1990,32 @@ jobs:
             fi
             LAST_SHELL_PID="$SHELL_PID"
 
+            # ---- 2b. Deteksi crash host CRD (dump baru di crashpad) ----
+            # Host libremoting bisa crash walau service systemd tetap
+            # "active"; client hanya melihat layar hitam. Dump baru =
+            # restart host (rate-limited) supaya capture pulih.
+            HOST_RESTARTED=""
+            CRASH_COUNT="$(find "$CRASH_DIR" -maxdepth 1 -name '*.dmp' 2>/dev/null | wc -l | tr -d ' ')"
+            if [ "${CRASH_COUNT:-0}" -gt "${LAST_CRASH_COUNT:-0}" ]; then
+              echo ""
+              echo "##[warning]CRD host crash terdeteksi: dump baru (${LAST_CRASH_COUNT} -> ${CRASH_COUNT})."
+              echo -e "  ${C_RED}[INCIDENT] chrome-remote-desktop host crash; client bisa melihat layar hitam.${C_NC}"
+              ls -lt "$CRASH_DIR" 2>/dev/null | head -n 5 || true
+              echo "::group::[INCIDENT] journal chrome-remote-desktop@runner (80 baris terakhir)"
+              sudo journalctl -u chrome-remote-desktop@runner -n 80 --no-pager 2>/dev/null || true
+              echo "::endgroup::"
+              if [ $(( NOW - LAST_HOST_RESTART )) -ge "$RESTART_MIN_GAP" ]; then
+                HOST_RESTARTS=$(( HOST_RESTARTS + 1 ))
+                LAST_HOST_RESTART=$NOW
+                echo -e "  ${C_YELLOW}[INFO] Restart chrome-remote-desktop@runner setelah crash (ke-${HOST_RESTARTS})...${C_NC}"
+                sudo systemctl restart chrome-remote-desktop@runner 2>/dev/null || \
+                  sudo systemctl start chrome-remote-desktop@runner 2>/dev/null || true
+                sleep 5
+                HOST_RESTARTED=1
+              fi
+            fi
+            LAST_CRASH_COUNT="$CRASH_COUNT"
+
             if [ "$SHELL_STATE" != "active" ]; then
               SHELL_MISS=$(( SHELL_MISS + 1 ))
               echo -e "  ${C_RED}[WARN] org.gnome.Shell@ubuntu.service tidak aktif (${SHELL_MISS}x berurutan). Compositor Wayland mati -> capture pasti hitam.${C_NC}"
@@ -1849,7 +2030,6 @@ jobs:
             fi
 
             # ---- 3. Auto-restart HANYA host daemon CRD (bukan shell) ----
-            HOST_RESTARTED=""
             if [ "$HOST_STATE" != "active" ]; then
               echo -e "  ${C_YELLOW}[WARN] chrome-remote-desktop@runner tidak aktif.${C_NC}"
               if [ $(( NOW - LAST_HOST_RESTART )) -ge "$RESTART_MIN_GAP" ]; then
