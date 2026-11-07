@@ -92,11 +92,13 @@ GNOME 26 + CRD (Wayland BETA).
 Plus: timezone **Asia/Jakarta (WIB)**, screensaver & lock disabled. The
 Cinnamon 26 **and** GNOME 24.04 workflows ship the Catppuccin wallpaper, full
 theme, and a Safe Upgrade desktop shortcut. Only `GNOME 26 + CRD (Wayland
-BETA)` is intentionally **vanilla** — 100% default GNOME/Ubuntu: no
-third-party themes, an empty desktop (no shortcuts), and the default wallpaper
-— but **dark mode is enabled automatically** (`color-scheme='prefer-dark'` for
-libadwaita apps + `gtk-theme='Yaru-dark'` for legacy GTK3 apps; the wallpaper
-uses the default dark variant `adwaita-d.jxl`).
+BETA)` is intentionally **vanilla** — default GNOME/Ubuntu: no third-party
+themes, an empty desktop (no shortcuts), with **automatic dark mode**
+(`color-scheme='prefer-dark'` + `gtk-theme='Yaru-dark'` for legacy GTK3 apps).
+The Ubuntu wallpaper and look (Yaru + Ubuntu Sans) are set **explicitly via
+dconf** with the dark variant `ubuntu-wallpaper-d.png`; this is required because
+CRD forces GNOME Wayland sessions into `GNOME` mode, so `[schema:ubuntu]`
+overrides never apply.
 
 ### Desktop variants
 

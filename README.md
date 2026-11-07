@@ -91,11 +91,13 @@ GNOME 26 + CRD (Wayland BETA).
 Plus: timezone **WIB (Asia/Jakarta)**, screensaver & lock dimatikan. Workflow
 Cinnamon 26 **dan** GNOME 24.04 memakai wallpaper Catppuccin, tema lengkap, dan
 shortcut Safe Upgrade di Desktop. Hanya `GNOME 26 + CRD (Wayland BETA)` yang
-sengaja **vanilla** — 100% default GNOME/Ubuntu: tanpa tema pihak ketiga,
-tanpa shortcut di Desktop (kosong), dan wallpaper default — tapi **dark mode
-sudah aktif otomatis** (`color-scheme='prefer-dark'` untuk app libadwaita +
-`gtk-theme='Yaru-dark'` untuk app legacy GTK3; wallpaper pun memakai varian
-gelap default `adwaita-d.jxl`).
+sengaja **vanilla** — default GNOME/Ubuntu: tanpa tema pihak ketiga, tanpa
+shortcut di Desktop (kosong), dengan **dark mode otomatis**
+(`color-scheme='prefer-dark'` + `gtk-theme='Yaru-dark'` untuk app legacy GTK3).
+Wallpaper dan tampilan Ubuntu (Yaru + Ubuntu Sans) di-set **eksplisit lewat
+dconf** dengan varian gelap `ubuntu-wallpaper-d.png`; ini perlu karena CRD
+memaksa sesi Wayland ke mode `GNOME`, sehingga override `[schema:ubuntu]`
+tidak dipakai.
 
 ### Varian desktop
 

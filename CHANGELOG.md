@@ -92,15 +92,26 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 - `gnome26-wayland-beta.yml`: **dark theme otomatis** — dconf system default
   `/etc/dconf/db/local.d/97-crd-dark-mode` + fallback per-user gsettings
   (`color-scheme='prefer-dark'` untuk app libadwaita, `gtk-theme='Yaru-dark'`
-  untuk app legacy GTK3). Wallpaper tetap default; varian gelap
-  (`picture-uri-dark`) dipilih Ubuntu otomatis. Step Verify kini meng-assert
-  dark mode aktif.
+  untuk app legacy GTK3). Wallpaper/tampilan Ubuntu kini di-set eksplisit
+  lewat dconf (`96-crd-ubuntu-look`) karena CRD memaksa
+  `XDG_CURRENT_DESKTOP=GNOME`. Step Verify meng-assert dark mode dan file
+  wallpaper ada.
 - `gnome24.yml` & `cinnamon.yml`: jeda sebelum tunnel Cloudflare ditutup
   dinaikkan `sleep 5` → `sleep 20` agar window polling browser form lebih aman
   (interval polling 2–10s + warm-up jaringan).
 
 ### Fixed
 
+- **GNOME 26 Wayland: verify tidak lagi mematikan sesi.** Assertion
+  `XDG_CURRENT_DESKTOP` harus `ubuntu` dihapus: Chrome Remote Desktop 157
+  selalu memaksa `GNOME` untuk sesi GNOME Wayland (`shared_lib.py`), sehingga
+  assertion itu mustahil lolos dan membuat step Verify gagal + Keep Alive
+  di-skip. Verify kini memeriksa hal yang benar-benar dikontrol workflow.
+- **Wallpaper biru solid `#023c88` di GNOME 26 Wayland.** Karena mode sesi
+  selalu `GNOME`, `picture-uri(-dark)` jatuh ke `adwaita-*.jxl` yang tidak
+  terpasang. Wallpaper + tampilan Ubuntu (Yaru, Ubuntu Sans) kini di-set
+  eksplisit lewat dconf `96-crd-ubuntu-look` dan fallback gsettings, dengan
+  `primary-color` aubergine sebagai fallback non-biru.
 - **Kode OAuth tidak lagi kedaluwarsa selama instalasi.** Registrasi CRD kini
   meminta kode setelah desktop siap lewat form web, bukan di awal run.
 - **Registrasi gagal tidak lagi memaksa re-run.** Form aktif lagi setelah

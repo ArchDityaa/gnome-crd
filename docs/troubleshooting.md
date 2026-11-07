@@ -296,3 +296,38 @@ echo "$XDG_CURRENT_DESKTOP"   # X-Cinnamon
 echo "$DESKTOP_SESSION"       # cinnamon
 pgrep -a cinnamon-session
 ```
+
+---
+
+## 14. GNOME 26 Wayland: wallpaper biru solid (`#023c88`)
+
+**Gejala:** setelah connect, desktop hanya menampilkan warna biru tua solid,
+tanpa gambar wallpaper.
+
+**Penyebab:** GNOME Shell menggambar `org.gnome.desktop.background
+primary-color` ketika `picture-uri` / `picture-uri-dark` menunjuk file yang
+tidak ada. Di Ubuntu, wallpaper bawaan GNOME (`/usr/share/backgrounds/gnome/
+adwaita-*.jxl`) memang tidak terpasang karena paket `gnome-backgrounds` tidak
+ada. Selain itu Chrome Remote Desktop memaksa sesi Wayland ke mode `GNOME`
+(`shared_lib.py`), sehingga override wallpaper Ubuntu
+(`[org.gnome.desktop.background:ubuntu]`) tidak pernah dipakai.
+
+**Cek:**
+
+```bash
+gsettings get org.gnome.desktop.background picture-uri
+gsettings get org.gnome.desktop.background picture-uri-dark
+ls -l /usr/share/backgrounds/ | head
+```
+
+Kalau nilainya menunjuk `.../gnome/adwaita-l.jxl` / `adwaita-d.jxl`, atau
+file-nya tidak ada, itu penyebabnya.
+
+**Solusi:** jalankan ulang workflow **GNOME 26 + CRD (Wayland BETA)** versi
+terbaru. Workflow menulis `/etc/dconf/db/local.d/96-crd-ubuntu-look` yang
+menetapkan `ubuntu-wallpaper-d.png` (dark), `warty-final-ubuntu.png` (light),
+serta `primary-color #2c001e` supaya fallback tidak biru. Tampilan Ubuntu
+(ikon/kursor Yaru, font Ubuntu Sans) juga di-set di file yang sama.
+
+> `XDG_CURRENT_DESKTOP=GNOME` di sesi ini **normal** — CRD yang menetapkan.
+> Jangan mengubahnya untuk mengejar wallpaper; setel lewat dconf seperti di atas.

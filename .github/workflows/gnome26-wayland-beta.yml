@@ -271,6 +271,9 @@ jobs:
             xorg \
             adwaita-icon-theme \
             fonts-cantarell \
+            fonts-ubuntu \
+            yaru-theme-icon \
+            ubuntu-wallpapers \
             qemu-system-x86 \
             qemu-utils \
             libvirt-daemon-system \
@@ -605,17 +608,17 @@ jobs:
           # Paksa environment user manager ke Wayland. Tanpa ini,
           # org.gnome.Shell@.service bisa menolak start karena
           # AssertEnvironment=XDG_SESSION_TYPE=wayland.
-          # PENTING: XDG_CURRENT_DESKTOP wajib "ubuntu:GNOME", BUKAN "GNOME".
-          # GSettings memakai variabel ini untuk memilih session mode, yaitu
-          # bagian [schema:ubuntu] di /usr/share/glib-2.0/schemas/
-          # 10_ubuntu-settings.gschema.override. Dengan "GNOME" saja, override
-          # wallpaper Ubuntu tidak berlaku dan GNOME jatuh ke default upstream
-          # adwaita-l.jxl / adwaita-d.jxl — file itu TIDAK ada karena paket
-          # gnome-backgrounds tidak terpasang di Ubuntu. Akibatnya GNOME Shell
-          # hanya menggambar primary-color #023c88 (biru) sebagai latar.
+          #
+          # CATATAN XDG_CURRENT_DESKTOP: nilai di sini TIDAK mengatur session
+          # mode GNOME Shell. CRD 157 selalu memaksa "GNOME" untuk sesi GNOME
+          # Wayland (shared_lib.py: GnomeWaylandSession.get_xdg_current_desktop
+          # mengembalikan "GNOME", lalu WaylandDesktop._init_child_env menimpa
+          # child_env["XDG_CURRENT_DESKTOP"]). Karena itu wallpaper/tema TIDAK
+          # boleh bergantung pada session mode; semuanya di-set eksplisit
+          # lewat dconf di step "Disable Screensaver and Lock".
           as_runner systemctl --user set-environment \
             XDG_SESSION_TYPE=wayland \
-            XDG_CURRENT_DESKTOP=ubuntu:GNOME \
+            XDG_CURRENT_DESKTOP=GNOME \
             XDG_SESSION_DESKTOP=ubuntu
           as_runner systemctl --user unset-environment \
             WAYLAND_DISPLAY DISPLAY XAUTHORITY GNOME_SETUP_DISPLAY 2>/dev/null || true
@@ -658,7 +661,6 @@ jobs:
           [Service]
           Environment=CHROME_REMOTE_DESKTOP_USE_WAYLAND=GNOME
           Environment=XDG_SESSION_TYPE=wayland
-          Environment=XDG_CURRENT_DESKTOP=ubuntu:GNOME
           Environment=XDG_RUNTIME_DIR=/run/user/$RUNNER_UID
           Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$RUNNER_UID/bus
           Environment=LIBGL_ALWAYS_SOFTWARE=1
@@ -731,15 +733,66 @@ jobs:
           sudo -u runner dbus-launch --exit-with-session gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' || true
 
           # ----------------------------------------------------------
+          # Tampilan default Ubuntu (wallpaper + ikon/kursor/font).
+          #
+          # CRD 157 memaksa XDG_CURRENT_DESKTOP=GNOME untuk sesi Wayland,
+          # sehingga override [org.gnome.desktop.background:ubuntu] dan
+          # [org.gnome.desktop.interface:ubuntu] di
+          # 10_ubuntu-settings.gschema.override TIDAK dipakai. Akibatnya
+          # picture-uri(-dark) jatuh ke adwaita-l.jxl / adwaita-d.jxl yang
+          # tidak terpasang (paket gnome-backgrounds tidak ada), dan GNOME
+          # Shell hanya menggambar primary-color #023c88 -> layar biru solid.
+          #
+          # Solusi: wallpaper + tema di-set EKSPLISIT lewat dconf sistem
+          # (berlaku untuk semua session mode), dengan primary-color aubergine
+          # sebagai fallback agar tidak pernah biru.
+          # ----------------------------------------------------------
+          echo -e "${C_YELLOW}[INFO] Setting wallpaper + Ubuntu look via dconf...${C_NC}"
+          sudo mkdir -p /etc/dconf/db/local.d || true
+
+          # Profil dconf user harus membaca system-db:local (idempoten).
+          if ! sudo grep -qs '^system-db:local' /etc/dconf/profile/user 2>/dev/null; then
+            printf 'user-db:user\nsystem-db:local\n' | sudo tee /etc/dconf/profile/user > /dev/null
+          fi
+
+          # 96 < 97, jadi 97-crd-dark-mode tetap menang untuk color-scheme dan
+          # gtk-theme, sementara sisanya diatur di sini.
+          sudo tee /etc/dconf/db/local.d/96-crd-ubuntu-look > /dev/null <<'EOF'
+          [org/gnome/desktop/background]
+          picture-uri='file:///usr/share/backgrounds/warty-final-ubuntu.png'
+          picture-uri-dark='file:///usr/share/backgrounds/ubuntu-wallpaper-d.png'
+          primary-color='#2c001e'
+          secondary-color='#2c001e'
+          color-shading-type='solid'
+          picture-options='zoom'
+          [org/gnome/desktop/interface]
+          icon-theme='Yaru'
+          cursor-theme='Yaru'
+          font-name='Ubuntu Sans 11'
+          document-font-name='Sans 11'
+          monospace-font-name='Ubuntu Sans Mono 11'
+          EOF
+          sudo dconf update || true
+
+          # Fallback per-user gsettings untuk 'runner' (dipakai saat CRD
+          # session menyala). Nilainya sama dengan system db di atas.
+          gs_runner() { sudo -u runner dbus-launch --exit-with-session gsettings set "$@" || true; }
+          gs_runner org.gnome.desktop.background picture-uri 'file:///usr/share/backgrounds/warty-final-ubuntu.png'
+          gs_runner org.gnome.desktop.background picture-uri-dark 'file:///usr/share/backgrounds/ubuntu-wallpaper-d.png'
+          gs_runner org.gnome.desktop.background primary-color '#2c001e'
+          gs_runner org.gnome.desktop.background secondary-color '#2c001e'
+          gs_runner org.gnome.desktop.background picture-options 'zoom'
+          gs_runner org.gnome.desktop.interface icon-theme 'Yaru'
+          gs_runner org.gnome.desktop.interface cursor-theme 'Yaru'
+          gs_runner org.gnome.desktop.interface font-name 'Ubuntu Sans 11'
+          gs_runner org.gnome.desktop.interface document-font-name 'Sans 11'
+          gs_runner org.gnome.desktop.interface monospace-font-name 'Ubuntu Sans Mono 11'
+
+          # ----------------------------------------------------------
           # Dark theme otomatis (GNOME 26):
-          #   color-scheme="prefer-dark" -> semua app libadwaita gelap,
+          #   color-scheme="prefer-dark" -> app libadwaita gelap,
           #   gtk-theme="Yaru-dark"      -> app legacy GTK3 ikut gelap.
-          # Wallpaper tidak diubah; dengan session mode "ubuntu" (lihat
-          # XDG_CURRENT_DESKTOP=ubuntu:GNOME di step 09) Ubuntu otomatis
-          # memakai varian gelap:
-          #   picture-uri-dark = file:///usr/share/backgrounds/ubuntu-wallpaper-d.png
-          # Ini BUKAN adwaita-d.jxl milik GNOME: paket gnome-backgrounds tidak
-          # terpasang, jadi file adwaita-*.jxl memang tidak ada di sistem.
+          # Wallpaper dark tetap ubuntu-wallpaper-d.png (di-set di 96).
           # ----------------------------------------------------------
           echo -e "${C_YELLOW}[INFO] Enabling dark theme system-wide via dconf...${C_NC}"
           sudo mkdir -p /etc/dconf/db/local.d || true
@@ -1533,45 +1586,56 @@ jobs:
             echo -n "$key = "
             sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.interface "$key" || true
           done
-          # Cek "bukan Catppuccin" saja tidak memadai: kalau URI menunjuk file
-          # yang tidak ada, GNOME Shell (js/ui/background.js) TIDAK menggambar
-          # gambar sama sekali dan hanya memakai primary-color #023c88 ->
-          # seluruh layar jadi biru solid. Jadi validasi juga file-nya ada,
-          # untuk varian light maupun dark (picture-uri / picture-uri-dark).
-          #
-          # Session mode harus memuat "ubuntu". Kalau hanya "GNOME", bagian
-          # [org.gnome.desktop.background:ubuntu] di 10_ubuntu-settings.
-          # gschema.override tidak berlaku, GNOME turun ke default upstream
-          # adwaita-l/d.jxl — file itu tidak ada di Ubuntu (gnome-backgrounds
-          # tidak terpasang) — dan layar menjadi biru #023c88.
+          # Wallpaper + tampilan: JANGAN mengandalkan session mode. CRD 157
+          # memaksa XDG_CURRENT_DESKTOP=GNOME (shared_lib.py), jadi override
+          # [org.gnome.desktop.background:ubuntu] tidak pernah berlaku.
+          # Kalau file gambar tidak ada, GNOME Shell (js/ui/background.js)
+          # tidak menggambar apa pun dan hanya memakai primary-color.
+          # Nilai yang diharapkan di-set eksplisit oleh dconf 96-crd-ubuntu-look.
           SHELL_PID="$(pgrep -x gnome-shell | head -n1)"
-          LIVE_DESKTOP="$(tr '\0' '\n' < "/proc/${SHELL_PID}/environ" 2>/dev/null | sed -n 's/^XDG_CURRENT_DESKTOP=//p')"
-          echo "XDG_CURRENT_DESKTOP (gnome-shell) = ${LIVE_DESKTOP:-<kosong>}"
-          case "$LIVE_DESKTOP" in
-            *ubuntu*)
-              ;;
-            *)
-              echo "[FAIL] gnome-shell tidak berjalan dalam session mode ubuntu."
-              echo "       Override wallpaper Ubuntu tidak dipakai (risiko layar biru #023c88)."
-              exit 1
-              ;;
-          esac
-          for key in picture-uri picture-uri-dark; do
-            echo -n "$key = "
-            BG_URI="$(sudo -u runner env XDG_CURRENT_DESKTOP=ubuntu:GNOME dbus-run-session -- gsettings get org.gnome.desktop.background "$key" 2>/dev/null || true)"
-            echo "$BG_URI"
-            if echo "$BG_URI" | grep -qiE 'catppuccin'; then
-              echo "[FAIL] Wallpaper bukan default Ubuntu ($key)."
+          if [ -n "$SHELL_PID" ] && [ -r "/proc/${SHELL_PID}/environ" ]; then
+            LIVE_DESKTOP="$(tr '\0' '\n' < "/proc/${SHELL_PID}/environ" | sed -n 's/^XDG_CURRENT_DESKTOP=//p')"
+            echo "XDG_CURRENT_DESKTOP (gnome-shell) = ${LIVE_DESKTOP:-<kosong>} (dipaksa CRD, bukan indikator wallpaper)"
+          fi
+
+          EXPECT_LIGHT='file:///usr/share/backgrounds/warty-final-ubuntu.png'
+          EXPECT_DARK='file:///usr/share/backgrounds/ubuntu-wallpaper-d.png'
+
+          check_wallpaper() {
+            local key="$1"
+            local want="$2"
+            local got path
+            got="$(sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.background "$key" 2>/dev/null | tr -d "'" || true)"
+            echo "$key = $got"
+            if [ "$got" != "$want" ]; then
+              echo "[FAIL] $key bukan wallpaper Ubuntu yang diharapkan."
+              echo "       diharapkan: $want"
               exit 1
             fi
-            BG_PATH="$(printf '%s' "$BG_URI" | tr -d "'" | sed 's|^file://||')"
-            if [ ! -f "$BG_PATH" ]; then
-              echo "[FAIL] File wallpaper tidak ada untuk $key: ${BG_PATH:-<kosong>}"
-              echo "       Efeknya: GNOME Shell menampilkan warna solid #023c88 (biru)."
+            path="${got#file://}"
+            if [ ! -f "$path" ]; then
+              echo "[FAIL] File wallpaper tidak ada: $path"
+              echo "       Efeknya: GNOME Shell hanya menggambar primary-color (bisa biru #023c88)."
+              exit 1
+            fi
+          }
+
+          check_wallpaper picture-uri "$EXPECT_LIGHT"
+          check_wallpaper picture-uri-dark "$EXPECT_DARK"
+
+          # Tampilan Ubuntu: CRD memaksa mode GNOME, jadi nilainya di-set
+          # eksplisit (bukan warisan [schema:ubuntu]).
+          for pair in "icon-theme:Yaru" "cursor-theme:Yaru" "font-name:Ubuntu Sans 11"; do
+            key="${pair%%:*}"
+            want="${pair#*:}"
+            got="$(sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.interface "$key" 2>/dev/null | tr -d "'" || true)"
+            echo "$key = $got"
+            if [ "$got" != "$want" ]; then
+              echo "[FAIL] $key bukan default Ubuntu yang diharapkan ($want)."
               exit 1
             fi
           done
-          echo -e "${C_GREEN}[OK] Wallpaper default Ubuntu ada di disk (light + dark).${C_NC}"
+          echo -e "${C_GREEN}[OK] Wallpaper + tampilan default Ubuntu (file ada, bukan Adwaita).${C_NC}"
           echo "::endgroup::"
 
           echo "::group::[CHECK] timezone (Asia/Jakarta)"

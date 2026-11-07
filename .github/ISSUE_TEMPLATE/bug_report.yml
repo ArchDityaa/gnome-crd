@@ -1,5 +1,5 @@
 name: Bug report
-description: Laporkan masalah pada workflow GNOME 26 / Cinnamon 26 (desktop + CRD)
+description: Laporkan masalah pada workflow GNOME 24.04 / GNOME 26 Wayland / Cinnamon 26 (desktop + CRD)
 title: "[Bug] "
 labels: ["bug"]
 body:
@@ -15,9 +15,9 @@ body:
     attributes:
       label: Varian desktop
       options:
-        - GNOME 26 (gnome26.yml)
+        - GNOME 24.04 (gnome24.yml)
         - Cinnamon 26 (cinnamon.yml)
-        - Workflow lama gnome.yml
+        - GNOME 26 + CRD Wayland BETA (gnome26-wayland-beta.yml)
     validations:
       required: true
 
