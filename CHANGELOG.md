@@ -7,6 +7,10 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Added
 
+- `docs/images/archdityaa.png` — avatar bulat developer (sumber: avatar GitHub
+  ArchDityaa, di-crop lokal dengan ring indigo).
+- `docs/images/badges/{github,instagram,tiktok,whatsapp}.svg` — badge sosial
+  lokal bergaya slate/indigo (ikon dari Simple Icons, CC0).
 - `docs/wayland-crd.md` — dokumentasi **terverifikasi** GNOME 26 Wayland di
   Chrome Remote Desktop: arsitektur, bukti run, video AV1/±60 fps, audio
   PipeWire, animasi, langkah verifikasi, dan batasan.
@@ -43,6 +47,10 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Changed
 
+- README (ID & EN): bagian **Pengembang/Developer** di paling bawah — avatar,
+  nama, role, badge GitHub/Instagram/TikTok/WhatsApp, footer lisensi +
+  kembali ke atas; TOC, Kredit/Credits (atribusi Simple Icons), dan struktur
+  repo ikut diperbarui.
 - Banner README (`docs/images/banner.svg`) dirombak: palet **slate/indigo**
   selaras diagram alur, tanpa warna Catppuccin yang bertabrakan; teks
   diperbarui ke Ubuntu 24.04/26.04 + GNOME 26 Wayland/AV1/audio.

@@ -38,6 +38,7 @@ Connect from your browser via Chrome Remote Desktop — nothing to install local
 - [Repository layout](#repository-layout)
 - [Contributing](#contributing)
 - [Credits](#credits)
+- [Developer](#developer)
 
 ---
 
@@ -349,6 +350,8 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 │   └── safe-upgrade.sh          # session-safe upgrade helper
 ├── docs/
 │   ├── images/banner.svg
+│   ├── images/archdityaa.png
+│   ├── images/badges/            # social icons (Simple Icons, CC0)
 │   ├── images/workflow-id.svg
 │   ├── images/workflow-en.svg
 │   ├── images/wayland-proof-2026-11-07.png
@@ -391,5 +394,21 @@ actionlint -ignore SC2016 -ignore SC2034 -ignore SC2012 \
 - [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme) — icon theme
 - [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) — JetBrainsMono
 - Google Chrome Remote Desktop
+- [Simple Icons](https://simpleicons.org/) — social icons (CC0)
 
-License: [MIT](LICENSE).
+---
+
+## Developer
+
+<div align="center">
+  <a href="https://github.com/ArchDityaa" title="GitHub: ArchDityaa"><img src="docs/images/archdityaa.png" width="96" height="96" alt="ArchDityaa"></a>
+  <h3>ArchDityaa</h3>
+  <p><sub>Developer &amp; maintainer</sub></p>
+  <p>
+    <a href="https://github.com/ArchDityaa" title="GitHub: ArchDityaa"><img src="docs/images/badges/github.svg" height="34" alt="GitHub: ArchDityaa"></a>
+    <a href="https://www.instagram.com/aaaditz_/" title="Instagram: aaaditz_"><img src="docs/images/badges/instagram.svg" height="34" alt="Instagram: aaaditz_"></a>
+    <a href="https://www.tiktok.com/@kiraadityaa" title="TikTok: kiraadityaa"><img src="docs/images/badges/tiktok.svg" height="34" alt="TikTok: kiraadityaa"></a>
+    <a href="https://wa.me/6281553362795" title="WhatsApp: 0815-5336-2795"><img src="docs/images/badges/whatsapp.svg" height="34" alt="WhatsApp: 0815-5336-2795"></a>
+  </p>
+  <p><sub>© ArchDityaa · <a href="LICENSE">MIT License</a> · <a href="#table-of-contents">Back to top ↑</a></sub></p>
+</div>
