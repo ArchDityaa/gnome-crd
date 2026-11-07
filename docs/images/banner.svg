@@ -1,61 +1,84 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-label="RICH LINUX - GNOME + Chrome Remote Desktop">
-  <title>RICH LINUX - GNOME + Chrome Remote Desktop</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-label="RICH LINUX — GNOME 26 Wayland di Chrome Remote Desktop">
+  <title>RICH LINUX — GNOME 26 Wayland di Chrome Remote Desktop</title>
+  <desc>Banner: Ubuntu 24.04/26.04, GNOME 26 Wayland, video AV1 60 fps, audio, diakses lewat Chrome Remote Desktop.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#24273a"/>
-      <stop offset="55%" stop-color="#1e2030"/>
-      <stop offset="100%" stop-color="#181926"/>
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="55%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#111827"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#c6a0f6"/>
-      <stop offset="50%" stop-color="#f5bde6"/>
-      <stop offset="100%" stop-color="#8aadf4"/>
+
+    <linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c7d2fe"/>
+      <stop offset="100%" stop-color="#818cf8"/>
     </linearGradient>
+
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
+    </radialGradient>
+
+    <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.1" fill="#334155"/>
+    </pattern>
   </defs>
 
   <rect width="1280" height="320" fill="url(#bg)"/>
+  <rect width="1280" height="320" fill="url(#dots)" opacity="0.5"/>
+  <ellipse cx="1100" cy="20" rx="430" ry="240" fill="url(#glow)"/>
+  <ellipse cx="160" cy="330" rx="340" ry="180" fill="url(#glow2)"/>
 
-  <!-- dekorasi -->
-  <circle cx="1120" cy="40" r="180" fill="#c6a0f6" opacity="0.06"/>
-  <circle cx="120" cy="300" r="140" fill="#8aadf4" opacity="0.06"/>
+  <!-- eyebrow -->
+  <text x="64" y="70" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="14" letter-spacing="2" fill="#94a3b8">UBUNTU 24.04 / 26.04 · 4 vCPU · 16 GB RAM · 6H MAX</text>
 
-  <!-- label atas -->
-  <text x="64" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-        font-size="17" fill="#8aadf4" letter-spacing="2">UBUNTU 24.04 · 4 vCPU · 16 GB RAM · MAX 6 JAM</text>
+  <!-- title -->
+  <text x="64" y="158" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Inter, Roboto, Arial, sans-serif"
+        font-size="76" font-weight="800" letter-spacing="-1.5" fill="#f8fafc">RICH <tspan fill="url(#titleGrad)">LINUX</tspan></text>
 
-  <!-- judul -->
-  <text x="62" y="164" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-        font-size="74" font-weight="700" fill="#c6a0f6">RICH LINUX</text>
+  <!-- subtitle -->
+  <text x="64" y="200" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Inter, Roboto, Arial, sans-serif"
+        font-size="24" font-weight="500"><tspan fill="#e2e8f0">GNOME 26 Wayland</tspan><tspan fill="#64748b"> · </tspan><tspan fill="#94a3b8">Chrome Remote Desktop</tspan></text>
 
-  <text x="64" y="206" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-        font-size="26" fill="#cad3f5">GNOME + Chrome Remote Desktop</text>
+  <!-- accent -->
+  <rect x="64" y="230" width="72" height="4" rx="2" fill="#6366f1"/>
 
-  <rect x="64" y="232" width="300" height="6" rx="3" fill="url(#accent)"/>
+  <!-- badges -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" letter-spacing="1.2">
+    <rect x="64" y="252" width="104" height="32" rx="16" fill="#111827" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="116" y="273" text-anchor="middle" fill="#c7d2fe">WAYLAND</text>
 
-  <!-- chips -->
-  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16">
-    <rect x="64"  y="262" width="96"  height="34" rx="17" fill="#363a4f"/>
-    <text x="112" y="285" fill="#a6da95" text-anchor="middle">fork</text>
+    <rect x="180" y="252" width="136" height="32" rx="16" fill="#111827" stroke="#334155" stroke-width="1.5"/>
+    <text x="248" y="273" text-anchor="middle" fill="#cbd5e1">AV1 · 60 FPS</text>
 
-    <rect x="176" y="262" width="96"  height="34" rx="17" fill="#363a4f"/>
-    <text x="224" y="285" fill="#eed49f" text-anchor="middle">run</text>
-
-    <rect x="288" y="262" width="132" height="34" rx="17" fill="#363a4f"/>
-    <text x="354" y="285" fill="#f5bde6" text-anchor="middle">connect</text>
+    <rect x="328" y="252" width="92" height="32" rx="16" fill="#111827" stroke="#334155" stroke-width="1.5"/>
+    <text x="374" y="273" text-anchor="middle" fill="#cbd5e1">AUDIO</text>
   </g>
 
-  <!-- panel terminal -->
-  <rect x="760" y="56" width="456" height="208" rx="16" fill="#181926" stroke="#363a4f" stroke-width="2"/>
-  <circle cx="790" cy="86" r="7" fill="#ed8796"/>
-  <circle cx="814" cy="86" r="7" fill="#eed49f"/>
-  <circle cx="838" cy="86" r="7" fill="#a6da95"/>
-  <line x1="760" y1="108" x2="1216" y2="108" stroke="#363a4f" stroke-width="2"/>
+  <!-- terminal -->
+  <rect x="756" y="56" width="460" height="208" rx="14" fill="#0b1220" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="782" cy="82" r="5" fill="#475569"/>
+  <circle cx="802" cy="82" r="5" fill="#475569"/>
+  <circle cx="822" cy="82" r="5" fill="#475569"/>
+  <text x="850" y="86" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="12" fill="#64748b">runner@gnome — bash</text>
+  <line x1="757" y1="100" x2="1215" y2="100" stroke="#1e293b" stroke-width="1.5"/>
 
-  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17">
-    <text x="790" y="142" fill="#a6da95">runner@gnome:~$</text>
-    <text x="790" y="170" fill="#cad3f5">sudo safe-upgrade</text>
-    <text x="790" y="198" fill="#8aadf4">[OK] GNOME + CRD siap</text>
-    <text x="790" y="226" fill="#c6a0f6">access: remotedesktop.google.com</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16">
+    <text x="782" y="134"><tspan fill="#94a3b8">runner@gnome:~$</tspan><tspan fill="#e2e8f0"> crd --wayland</tspan></text>
+    <text x="782" y="166"><tspan fill="#818cf8">✓</tspan><tspan fill="#cbd5e1"> GNOME 26 Wayland</tspan></text>
+    <text x="782" y="196"><tspan fill="#818cf8">✓</tspan><tspan fill="#cbd5e1"> AV1 · 60 fps</tspan></text>
+    <text x="782" y="226"><tspan fill="#818cf8">✓</tspan><tspan fill="#cbd5e1"> audio</tspan></text>
+    <g font-size="13" fill="#94a3b8" text-anchor="end">
+      <text x="1186" y="166">ready</text>
+      <text x="1186" y="196">smooth</text>
+      <text x="1186" y="226">on</text>
+    </g>
   </g>
 </svg>

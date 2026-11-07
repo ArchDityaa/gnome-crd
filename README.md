@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner.svg" alt="RICH LINUX — GNOME + Chrome Remote Desktop" width="900">
+  <img src="docs/images/banner.svg" alt="RICH LINUX — GNOME 26 Wayland di Chrome Remote Desktop" width="900">
 </p>
 
 <p align="center">

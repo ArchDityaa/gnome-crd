@@ -43,6 +43,9 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Changed
 
+- Banner README (`docs/images/banner.svg`) dirombak: palet **slate/indigo**
+  selaras diagram alur, tanpa warna Catppuccin yang bertabrakan; teks
+  diperbarui ke Ubuntu 24.04/26.04 + GNOME 26 Wayland/AV1/audio.
 - README (ID & EN): diagram alur diganti dari Mermaid ke **SVG 3 fase**
   (`docs/images/workflow-id.svg` / `workflow-en.svg`) dengan palet slate/indigo
   yang konsisten dan tetap terbaca di mode terang maupun gelap.
