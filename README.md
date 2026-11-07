@@ -50,23 +50,9 @@ Akses dari browser lewat Chrome Remote Desktop — tanpa install apa pun di komp
 
 ## Alur singkat
 
-```mermaid
-flowchart LR
-    classDef action fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,font-weight:bold;
-    classDef desktop fill:#dfd,stroke:#6f6,stroke-width:2px,color:#222;
-    classDef access fill:#fdf,stroke:#f6f,stroke-width:2px,color:#222;
-
-    A[Fork repo]:::action
-    A --> B[Aktifkan Actions]:::action
-    B --> C[Jalankan Workflow<br/>tanpa input auth]:::action
-    C --> D[Runner ubuntu-24.04<br/>GNOME / Cinnamon + Chrome]:::desktop
-    D --> E[URL Form via<br/>Cloudflare Tunnel]:::action
-    E --> F[Authorize di<br/>remotedesktop.google.com]:::access
-    F --> G[Paste Perintah<br/>Debian ke Form]:::action
-    G --> H[Device Terdaftar<br/>'gnome' / 'cinnamon']:::desktop
-    H --> I[Connect dari Browser]:::access
-    I --> J[Desktop GNOME / Cinnamon<br/>maksimum 6 jam]:::desktop
-```
+<p align="center">
+  <img src="docs/images/workflow-id.svg" alt="Alur workflow: fork repo, aktifkan Actions, run workflow, runner, form URL, authorize, paste perintah, device terdaftar, connect, desktop aktif" width="900">
+</p>
 
 > **Penting:** kode auth Chrome Remote Desktop **tidak lagi diambil di awal**.
 > Workflow menunggu desktop siap, baru menampilkan form web. Kode yang Anda buat
@@ -370,6 +356,8 @@ Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots
 │   └── safe-upgrade.sh          # helper anti-putus-sesi
 ├── docs/
 │   ├── images/banner.svg
+│   ├── images/workflow-id.svg
+│   ├── images/workflow-en.svg
 │   ├── images/wayland-proof-2026-11-07.png
 │   ├── wayland-crd.md
 │   ├── adding-screenshots.md

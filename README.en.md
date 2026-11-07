@@ -50,23 +50,9 @@ Connect from your browser via Chrome Remote Desktop — nothing to install local
 
 ## At a glance
 
-```mermaid
-flowchart LR
-    classDef action fill:#bbf,stroke:#f66,stroke-width:2px,color:#fff,font-weight:bold;
-    classDef desktop fill:#dfd,stroke:#6f6,stroke-width:2px,color:#222;
-    classDef access fill:#fdf,stroke:#f6f,stroke-width:2px,color:#222;
-
-    A[Fork repo]:::action
-    A --> B[Enable Actions]:::action
-    B --> C[Run Workflow<br/>no auth input]:::action
-    C --> D[ubuntu-24.04 Runner<br/>GNOME / Cinnamon + Chrome]:::desktop
-    D --> E[Form URL via<br/>Cloudflare Tunnel]:::action
-    E --> F[Authorize at<br/>remotedesktop.google.com]:::access
-    F --> G[Paste Debian<br/>Command into Form]:::action
-    G --> H[Device Registered<br/>'gnome' / 'cinnamon']:::desktop
-    H --> I[Connect from Browser]:::access
-    I --> J[GNOME / Cinnamon Desktop<br/>up to 6 hours]:::desktop
-```
+<p align="center">
+  <img src="docs/images/workflow-en.svg" alt="Workflow: fork repo, enable Actions, run workflow, Ubuntu runner, form URL, authorize, paste command, device registered, connect, desktop ready" width="900">
+</p>
 
 > **Important:** you no longer get the Chrome Remote Desktop auth code at the
 > start. The workflow waits until the desktop is ready, then shows a web form.
@@ -363,6 +349,8 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 │   └── safe-upgrade.sh          # session-safe upgrade helper
 ├── docs/
 │   ├── images/banner.svg
+│   ├── images/workflow-id.svg
+│   ├── images/workflow-en.svg
 │   ├── images/wayland-proof-2026-11-07.png
 │   ├── wayland-crd.md
 │   ├── adding-screenshots.md

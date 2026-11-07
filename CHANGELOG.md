@@ -43,6 +43,9 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Changed
 
+- README (ID & EN): diagram alur diganti dari Mermaid ke **SVG 3 fase**
+  (`docs/images/workflow-id.svg` / `workflow-en.svg`) dengan palet slate/indigo
+  yang konsisten dan tetap terbaca di mode terang maupun gelap.
 - README (ID & EN): status GNOME 26 Wayland naik dari "eksperimental" menjadi
   **terverifikasi (7 Nov 2026)** — tabel fitur, callout, tautan dokumen, serta
   catatan batasan dan audio.

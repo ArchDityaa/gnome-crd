@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="350" viewBox="0 0 980 350" role="img" aria-label="GNOME + Chrome Remote Desktop workflow">
+<title>GNOME + Chrome Remote Desktop workflow</title>
+<desc>From forking the repository and authorizing to a running desktop for up to six hours.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker></defs>
+<circle cx="23" cy="36" r="3.2" fill="#6366f1"/><text x="34" y="40" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#94a3b8">1 · SETUP</text>
+<g>
+<rect x="150" y="56" width="210" height="60" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+<text x="255.0" y="82" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#f8fafc">Fork repo</text>
+<text x="255.0" y="101" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#cbd5e1">your GitHub repository</text>
+</g>
+<g>
+<rect x="385" y="56" width="210" height="60" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+<text x="490.0" y="82" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#f8fafc">Enable Actions</text>
+<text x="490.0" y="101" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#cbd5e1">Settings → Actions</text>
+</g>
+<g>
+<rect x="620" y="56" width="210" height="60" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+<text x="725.0" y="82" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#f8fafc">Run workflow</text>
+<text x="725.0" y="101" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#cbd5e1">no auth input</text>
+</g>
+<line x1="363" y1="86" x2="382" y2="86" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="598" y1="86" x2="617" y2="86" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+<circle cx="23" cy="136" r="3.2" fill="#6366f1"/><text x="34" y="140" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#94a3b8">2 · BUILD &amp; AUTHORIZE</text>
+<g>
+<rect x="100" y="156" width="205" height="60" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="202.5" y="182" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#0f172a">Ubuntu runner</text>
+<text x="202.5" y="201" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#475569">24.04 / 26.04 · GNOME/Cinnamon</text>
+</g>
+<g>
+<rect x="320" y="156" width="205" height="60" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+<text x="422.5" y="182" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#f8fafc">Form URL</text>
+<text x="422.5" y="201" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#cbd5e1">Cloudflare Tunnel</text>
+</g>
+<g>
+<rect x="540" y="156" width="205" height="60" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="642.5" y="182" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#f8fafc">Authorize</text>
+<text x="642.5" y="201" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#cbd5e1">remotedesktop.google.com</text>
+</g>
+<g>
+<rect x="760" y="156" width="205" height="60" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+<text x="862.5" y="182" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#f8fafc">Paste command</text>
+<text x="862.5" y="201" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#cbd5e1">Debian Linux</text>
+</g>
+<line x1="308" y1="186" x2="317" y2="186" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="528" y1="186" x2="537" y2="186" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="748" y1="186" x2="757" y2="186" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+<circle cx="23" cy="236" r="3.2" fill="#6366f1"/><text x="34" y="240" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#94a3b8">3 · ACCESS</text>
+<g>
+<rect x="150" y="256" width="210" height="60" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="255.0" y="282" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#0f172a">Device registered</text>
+<text x="255.0" y="301" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#475569">gnome / cinnamon</text>
+</g>
+<g>
+<rect x="385" y="256" width="210" height="60" rx="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="490.0" y="282" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#f8fafc">Connect</text>
+<text x="490.0" y="301" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#cbd5e1">from browser</text>
+</g>
+<g>
+<rect x="620" y="256" width="210" height="60" rx="10" fill="#4f46e5" stroke="#4338ca" stroke-width="1.5"/>
+<text x="725.0" y="282" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13.5" font-weight="600" fill="#ffffff">Desktop ready</text>
+<text x="725.0" y="301" text-anchor="middle" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10.5" fill="#e0e7ff">up to 6 hours · AV1 ~60 fps</text>
+</g>
+<line x1="363" y1="286" x2="382" y2="286" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="598" y1="286" x2="617" y2="286" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M725.0 116 V130.0 Q725.0 136.0 719.0 136.0 H208.5 Q202.5 136.0 202.5 142.0 V150" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M862.5 216 V230.0 Q862.5 236.0 856.5 236.0 H261.0 Q255.0 236.0 255.0 242.0 V250" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+</svg>
