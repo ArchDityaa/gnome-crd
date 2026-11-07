@@ -7,6 +7,12 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Added
 
+- `docs/wayland-crd.md` — dokumentasi **terverifikasi** GNOME 26 Wayland di
+  Chrome Remote Desktop: arsitektur, bukti run, video AV1/±60 fps, audio
+  PipeWire, animasi, langkah verifikasi, dan batasan.
+- `docs/images/wayland-proof-2026-11-07.png` — tangkapan compositor otomatis
+  dari run 42378799566 sebagai bukti render Wayland (artifact GitHub hanya
+  disimpan 3 hari).
 - `.github/workflows/cinnamon.yml` — varian **Cinnamon 26** di runner
   `ubuntu-26.04`: Cinnamon 6.4 X11 + Muffin + Nemo (tanpa lightdm/slick-greeter),
   sesi CRD `cinnamon-session`, screensaver/lock off, Catppuccin (GTK + Cinnamon
@@ -37,6 +43,13 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Changed
 
+- README (ID & EN): status GNOME 26 Wayland naik dari "eksperimental" menjadi
+  **terverifikasi (7 Nov 2026)** — tabel fitur, callout, tautan dokumen, serta
+  catatan batasan dan audio.
+- `docs/faq.md` + `docs/troubleshooting.md`: Q&A Wayland/audio/codec serta
+  bagian **#15–#17** (layar blank, audio, performa).
+- Header `gnome26-wayland-beta.yml`: status terverifikasi + ringkasan fitur;
+  nama file/workflow tidak diubah agar tautan dan riwayat run tetap valid.
 - `gnome26.yml`: input `crd_host_command` menjadi **opsional** (fallback),
   header/instruksi memakai alur form web, komentar checkout diperbarui, dan
   keep-alive menghitung sisa waktu dari `JOB_START_EPOCH` (bukan `sleep 21600`).
@@ -102,6 +115,11 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Fixed
 
+- **Layar blank GNOME 26 Wayland**: tambah mapping `video.convert` pada
+  template PipeWire CRD, watchdog crash dump (auto-restart
+  `chrome-remote-desktop@runner`), dan step `Capture desktop proof` + artifact
+  untuk diagnosis. Crash EI (`gnome_remote_desktop_session.cc:319`) tetap bug
+  upstream; dimitigasi lewat restart otomatis.
 - **GNOME 26 Wayland: verify tidak lagi mematikan sesi.** Assertion
   `XDG_CURRENT_DESKTOP` harus `ubuntu` dihapus: Chrome Remote Desktop 157
   selalu memaksa `GNOME` untuk sesi GNOME Wayland (`shared_lib.py`), sehingga

@@ -331,3 +331,115 @@ serta `primary-color #2c001e` supaya fallback tidak biru. Tampilan Ubuntu
 
 > `XDG_CURRENT_DESKTOP=GNOME` di sesi ini **normal** — CRD yang menetapkan.
 > Jangan mengubahnya untuk mengejar wallpaper; setel lewat dconf seperti di atas.
+
+Lihat juga panduan lengkap Wayland: [`wayland-crd.md`](wayland-crd.md).
+
+---
+
+## 15. Wayland: layar hitam/blank setelah connect
+
+**Gejala:** device `gnome` tampak online dan client CRD tersambung, tetapi layar
+hanya hitam/blank.
+
+**Penyebab yang diketahui:**
+
+1. **Host CRD crash saat EI reconnect.** Di log host muncul:
+
+   ```
+   FATAL remoting/host/linux/gnome_remote_desktop_session.cc:319
+   Failed to reconnect to EI session:
+   Object does not exist at path /org/gnome/Mutter/RemoteDesktop/Session/...
+   ```
+
+   Workflow versi baru memantau crash dump dan me-restart host otomatis
+   (maksimal sekali per 2 menit).
+2. **Negosiasi video PipeWire gagal** — di journal shell:
+   `pipewire remote error: id:2 no more input formats`. Template PipeWire CRD
+   sekarang dipatch dengan `video.convert` untuk membantu negosiasi.
+3. **Client connect terlalu cepat** setelah `READY`, saat host/EI belum settle.
+
+**Solusi cepat:**
+
+- Tunggu **1–2 menit**, lalu reconnect. Jangan langsung cancel workflow.
+- Jika tetap blank, coba disconnect lalu connect lagi sekali lagi.
+- Connect pertama setelah READY sebaiknya diberi jeda ±1–2 menit.
+
+**Cek manual (dari host/workflow):**
+
+```bash
+sudo systemctl status chrome-remote-desktop@runner --no-pager
+ls -lt /run/user/$(id -u runner)/crd_crashpad/completed | head
+sudo journalctl -u chrome-remote-desktop@runner -n 120 --no-pager
+sudo -u runner env XDG_RUNTIME_DIR=/run/user/$(id -u runner) \
+  journalctl --user -u org.gnome.Shell@ubuntu.service -n 120 --no-pager
+sudo -u runner env XDG_RUNTIME_DIR=/run/user/$(id -u runner) \
+  PIPEWIRE_REMOTE=crd_audio/pipewire pw-link -l
+```
+
+**Restart manual host** (sesi desktop akan ikut restart; tunggu lalu reconnect):
+
+```bash
+sudo systemctl restart chrome-remote-desktop@runner
+```
+
+**Jika persisten:** re-run workflow. Untuk kebutuhan yang harus selalu jalan,
+gunakan workflow **GNOME 24.04 (X11)** sampai mode Wayland CRD stabil.
+
+> Artifact `desktop-proof-<run_id>` menyimpan frame compositor + crash dump;
+> berguna saat melaporkan issue.
+
+---
+
+## 16. Audio tidak terdengar di Wayland
+
+**Cek di klien lebih dulu:** ikon audio Chrome Remote Desktop tidak mute,
+volume tab/browser tidak 0, dan output device klien benar.
+
+**Cek di dalam sesi GNOME (Terminal):**
+
+```bash
+pactl info | grep -E 'Server Name|Default Sink'
+pactl list short sinks
+pw-link -l | grep chrome_remote_desktop_session
+paplay /usr/share/sounds/ubuntu/stereo/bell.ogg
+```
+
+Sink yang benar bernama `chrome_remote_desktop_session`. Jika `pactl` tidak
+bisa connect, set environment berikut lalu ulangi:
+
+```bash
+export PULSE_RUNTIME_PATH="/run/user/$(id -u)/crd_audio"
+export PIPEWIRE_REMOTE="crd_audio/pipewire"
+```
+
+**Cek mute/volume desktop:** klik ikon speaker di kanan atas, pastikan tidak
+mute dan slider tidak 0. Beberapa aplikasi punya volume sendiri.
+
+**Restart audio sesi** (hati-hati; bisa memutus audio sementara):
+
+```bash
+systemctl --user restart wireplumber
+```
+
+Instance audio CRD (`crd_audio`) terpisah dari PipeWire sistem; restart host CRD
+juga akan membangun ulang jalur audio.
+
+**Masih tidak terdengar:** cek `journalctl --user -u wireplumber -n 80`,
+pastikan paket `pipewire`, `pipewire-pulse`, `wireplumber` terpasang, lalu
+re-run workflow.
+
+---
+
+## 17. Performa/codec: AV1 tidak dipakai atau fps rendah
+
+- **Codec adaptif.** AV1 hanya dipakai bila klien dan CPU mendukung; fallback ke
+  VP8/VP9/H.264 adalah normal. Cek statistik codec/fps di UI klien CRD.
+- **Jaringan.** Wi-Fi 5G yang stabil atau kabel lebih baik; hindari jaringan
+  dengan latency/jitter tinggi.
+- **Klien.** Tutup tab berat, pastikan hardware acceleration browser aktif,
+  dan jangan menjalankan banyak aplikasi berat di sesi.
+- **Runner.** Rendering memakai software (llvmpipe). Beban CPU tinggi di sesi
+  (build, VM, banyak animasi) menurunkan fps. Cek dengan `top`/`htop`.
+- **Resolusi** tetap 1920x1080 (virtual monitor), bukan resolusi dinamis.
+- Animasi sengaja dipaksa aktif lewat `force_animations`; jika terasa berat,
+  nonaktifkan ekstensi `force-animations@software-rendering` lewat Extensions.

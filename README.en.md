@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml"><img src="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
   <a href="https://github.com/ArchDityaa/gnome-crd/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/runner-ubuntu--24.04%20%7C%20beta--26.04-E95420.svg" alt="Runner: ubuntu-24.04 (Wayland BETA: 26.04)">
+  <img src="https://img.shields.io/badge/runner-ubuntu--24.04%20%7C%20wayland--26.04-E95420.svg" alt="Runner: ubuntu-24.04 (GNOME 26 Wayland, verified)">
   <img src="https://img.shields.io/badge/session-max%206h-orange.svg" alt="Session: max 6h">
   <img src="https://img.shields.io/badge/desktop-GNOME-4A86CF.svg" alt="Desktop: GNOME">
   <img src="https://img.shields.io/badge/desktop-Cinnamon-7A2ECF.svg" alt="Desktop: Cinnamon">
@@ -18,12 +18,18 @@ Connect from your browser via Chrome Remote Desktop — nothing to install local
 
 [Versi Bahasa Indonesia →](README.md)
 
+> ✅ **Verified on 7 November 2026:** **GNOME 26 Wayland** runs smoothly
+> through Chrome Remote Desktop — **AV1 video at ~60 fps**, PipeWire audio, and
+> working animations. Details, evidence, and caveats:
+> [**docs/wayland-crd.md**](docs/wayland-crd.md).
+
 ## Table of Contents
 
 - [Good for](#good-for)
 - [At a glance](#at-a-glance)
 - [What you get](#what-you-get)
 - [Desktop variants](#desktop-variants)
+- [GNOME 26 Wayland (verified)](#gnome-26-wayland-verified)
 - [Requirements](#requirements)
 - [Usage (5 steps)](#usage-5-steps)
 - [After you connect](#after-you-connect)
@@ -35,7 +41,7 @@ Connect from your browser via Chrome Remote Desktop — nothing to install local
 
 ---
 
-Good for:
+## Good for
 
 - Experimenting with the GNOME desktop environment (extensions, themes, layouts)
 - Testing and running GUI tools (VS Code, Chrome, virt-manager, GNOME Boxes)
@@ -81,6 +87,7 @@ GNOME 26 + CRD (Wayland BETA).
 |---|---|
 | **GNOME Desktop** | Full `ubuntu` GNOME session (not XFCE) — `GNOME 24.04` workflow |
 | **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — `Cinnamon 26` workflow |
+| **GNOME 26 Wayland (verified)** | Headless GNOME Shell 50 on Ubuntu 26.04, 1920x1080 virtual monitor, AV1/~60 fps video, PipeWire audio, animations on — [details](docs/wayland-crd.md) |
 | **Google Chrome** | Ready to sign in to your Google account |
 | **VS Code** | `code` |
 | **OpenCode CLI + Desktop** | CLI at `/usr/local/bin/opencode`, plus the desktop app |
@@ -110,12 +117,24 @@ overrides never apply.
 | File manager | Nautilus | Nemo |
 | Note | Animations forced on via an extension | Animations may stay off because Cinnamon disables effects under software rendering (llvmpipe) |
 
-There is also an experimental **GNOME 26 + CRD (Wayland BETA)** variant
-(`.github/workflows/gnome26-wayland-beta.yml`): headless GNOME Shell on
-Wayland, `ubuntu-26.04` runner, a vanilla desktop, and a 1920x1080 virtual
-monitor.
+### GNOME 26 Wayland (verified)
 
-GNOME 24.04 & Cinnamon 26 run on `ubuntu-24.04`; Wayland BETA runs on
+[`gnome26-wayland-beta.yml`](.github/workflows/gnome26-wayland-beta.yml) runs a
+**headless GNOME Shell 50 Wayland** session on the `ubuntu-26.04` runner with a
+`1920x1080` virtual monitor and a vanilla desktop. Verified on **7 November
+2026** ([run 42378799566](https://github.com/ArchDityaa/gnome-crd/actions/runs/42378799566)):
+
+- **AV1 video at ~60 fps** (adaptive to client/network),
+- **audio** through the CRD PipeWire instance,
+- **animations** enabled despite software rendering,
+- keyboard/mouse input via Mutter RemoteDesktop/EI.
+
+CRD's Wayland mode is still **experimental upstream**. If the screen goes
+blank, wait 1–2 minutes and reconnect — the watchdog restarts the host
+automatically. Full guide, architecture, and troubleshooting:
+**[docs/wayland-crd.md](docs/wayland-crd.md)**.
+
+GNOME 24.04 & Cinnamon 26 run on `ubuntu-24.04`; GNOME 26 Wayland runs on
 `ubuntu-26.04`. User `runner` and the web authorization flow are the same.
 Pick either workflow when you run Actions.
 
@@ -310,6 +329,8 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
 | Cloudflare 1033/502 on the form page | The tunnel is warming up. Wait ~15 seconds and refresh. If it still fails, wait for a new URL in the log (the workflow restarts the tunnel automatically). |
 | Registration through the form fails | The OAuth code expired or was already used. Get a **fresh** command at <https://remotedesktop.google.com/headless>, then submit it again in the same form. No re-run needed while the 30-minute window is open. |
 | The 30-minute window expired | The workflow stops. Re-run it; the `.deb` cache makes installation much faster. |
+| GNOME 26 Wayland: blank screen after connecting | The CRD host can crash during an EI reconnect (`gnome_remote_desktop_session.cc:319`). Wait 1–2 minutes and reconnect; the watchdog restarts the host automatically. If it persists, see [troubleshooting #15](docs/troubleshooting.md#15-wayland-layar-hitamblank-setelah-connect) or use GNOME 24.04. |
+| GNOME 26 Wayland: no audio | Enable audio in the CRD client and check the volume; see [troubleshooting #16](docs/troubleshooting.md#16-audio-tidak-terdengar-di-wayland). |
 | Device not shown in Remote Access | Wait until the log shows `[OK] CHROME REMOTE DESKTOP READY`. If it's still missing, refresh the page and check `systemctl status chrome-remote-desktop@runner`. |
 | Session drops while updating packages | You used plain `apt upgrade`. Use `sudo safe-upgrade`. |
 | Odd resolution / small screen | X11 variants lock to `1024x768` (native `dummy` driver mode); Wayland BETA uses a `1920x1080` virtual monitor. Adjust via *Settings → Displays*. |
@@ -320,6 +341,7 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
 
 Full guide: [`docs/troubleshooting.md`](docs/troubleshooting.md) ·
 FAQ: [`docs/faq.md`](docs/faq.md) ·
+Wayland documentation: [`docs/wayland-crd.md`](docs/wayland-crd.md) ·
 How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.md)
 
 ---
@@ -332,7 +354,7 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 │   ├── workflows/
 │   │   ├── gnome24.yml          # main GNOME workflow (Ubuntu 24.04, X11)
 │   │   ├── cinnamon.yml         # Cinnamon 26 workflow (X11, device 'cinnamon')
-│   │   ├── gnome26-wayland-beta.yml # experimental (Wayland headless, BETA)
+│   │   ├── gnome26-wayland-beta.yml # GNOME 26 Wayland (verified; upstream BETA)
 │   │   └── lint.yml             # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml
@@ -341,6 +363,8 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 │   └── safe-upgrade.sh          # session-safe upgrade helper
 ├── docs/
 │   ├── images/banner.svg
+│   ├── images/wayland-proof-2026-11-07.png
+│   ├── wayland-crd.md
 │   ├── adding-screenshots.md
 │   ├── troubleshooting.md
 │   └── faq.md

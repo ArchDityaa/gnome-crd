@@ -1,23 +1,24 @@
 name: GNOME 26 + CRD (Wayland BETA)
 
 # ============================================================================
-#  RICH LINUX - GNOME 50 + Chrome Remote Desktop (WAYLAND BETA)
+#  RICH LINUX - GNOME 50 + Chrome Remote Desktop (WAYLAND)
 # ============================================================================
-#  ⚠️  STATUS: BETA / EKSPERIMENTAL — JANGAN DIPAKAI SEBAGAI SATU-SATUNYA
-#      WORKFLOW PRODUKSI. Gunakan gnome.yml (Ubuntu 24.04) jika butuh
-#      jalur X11 yang sudah terbukti. gnome26.yml adalah percobaan X11
-#      lama yang TIDAK bisa jalan di GNOME 50 (Wayland-only).
+#  ✅ STATUS: TERVERIFIKASI (7 November 2026) — GNOME 26 Wayland berjalan
+#      mulus lewat CRD: video AV1 ±60 fps, audio PipeWire, input EI, dan
+#      animasi aktif. Mode Wayland CRD TETAP EKSPERIMENTAL di upstream dan
+#      bisa berubah antar versi CRD/Mutter/PipeWire. Untuk jalur X11 yang
+#      sudah lama stabil, gunakan gnome24.yml (Ubuntu 24.04).
+#      Bukti, arsitektur, dan batasan: docs/wayland-crd.md
 #
-#  Workflow ini mencoba menjalankan GNOME Shell 50 (Ubuntu 26.04) sebagai
-#  sesi Wayland headless, lalu menyambungkannya ke Chrome Remote Desktop
-#  memakai mode Wayland eksperimental CRD 155+:
+#  Workflow ini menjalankan GNOME Shell 50 (Ubuntu 26.04) sebagai sesi
+#  Wayland headless, lalu menyambungkannya ke Chrome Remote Desktop memakai
+#  mode Wayland CRD 155+:
 #      CHROME_REMOTE_DESKTOP_USE_WAYLAND=GNOME
 #
-#  Kenapa terpisah? Ubuntu 26.04 / GNOME 50 sudah TIDAK mendukung sesi X11.
-#  CRD versi stabil masih default ke X11, jadi mode Wayland ini masih
-#  eksperimental dan bisa gagal tergantung versi CRD, Mutter, portal, dan
-#  kondisi runner. Workflow ini sengaja memisahkan eksperimen dari
-#  gnome26.yml agar jalur utama tidak ikut rusak.
+#  Kenapa terpisah? Ubuntu 26.04 / GNOME 50 tidak mendukung sesi X11.
+#  CRD stabil masih default ke X11, jadi mode Wayland ini eksperimental dan
+#  bisa gagal tergantung versi CRD, Mutter, portal, PipeWire, dan kondisi
+#  runner. Workflow ini memisahkan eksperimen dari jalur utama 24.04.
 #
 #  CARA PAKAI (dari fork Anda sendiri):
 #    1. Fork repo ini, aktifkan Actions.
@@ -32,10 +33,13 @@ name: GNOME 26 + CRD (Wayland BETA)
 #  Input `crd_host_command` tetap ada sebagai FALLBACK opsional kalau tunnel
 #  gagal dibuat. Normalnya biarkan kosong.
 #
-#  CATATAN BETA:
-#    - Desktop 100% default GNOME/Ubuntu: tanpa tema Catppuccin, tanpa
-#      shortcut aplikasi di Desktop, wallpaper default (pola yang sama
-#      dengan gnome24.yml).
+#  CATATAN:
+#    - Desktop default GNOME/Ubuntu (Yaru + Ubuntu Sans, wallpaper gelap);
+#      tanpa tema pihak ketiga dan tanpa shortcut Desktop.
+#    - Video AV1/±60 fps bersifat adaptif (klien, jaringan, beban CPU).
+#    - Audio memakai instance PipeWire CRD; aktifkan audio di klien.
+#    - Jika layar blank setelah connect, tunggu 1–2 menit lalu reconnect;
+#      watchdog me-restart host otomatis saat mendeteksi crash EI.
 #    - Jika langkah "Verify Installation" gagal, baca log journal yang
 #      dicetak. Biasanya masalah ada di GNOME Shell headless / portal /
 #      PipeWire, bukan di kode auth.

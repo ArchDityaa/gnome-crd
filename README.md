@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml"><img src="https://github.com/ArchDityaa/gnome-crd/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
   <a href="https://github.com/ArchDityaa/gnome-crd/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/runner-ubuntu--24.04%20%7C%20beta--26.04-E95420.svg" alt="Runner: ubuntu-24.04 (Wayland BETA: 26.04)">
+  <img src="https://img.shields.io/badge/runner-ubuntu--24.04%20%7C%20wayland--26.04-E95420.svg" alt="Runner: ubuntu-24.04 (GNOME 26 Wayland, terverifikasi)">
   <img src="https://img.shields.io/badge/session-maks%206%20jam-orange.svg" alt="Session: maks 6 jam">
   <img src="https://img.shields.io/badge/desktop-GNOME-4A86CF.svg" alt="Desktop: GNOME">
   <img src="https://img.shields.io/badge/desktop-Cinnamon-7A2ECF.svg" alt="Desktop: Cinnamon">
@@ -18,12 +18,18 @@ Akses dari browser lewat Chrome Remote Desktop — tanpa install apa pun di komp
 
 [English version →](README.en.md)
 
+> ✅ **Terverifikasi 7 November 2026:** **GNOME 26 Wayland** berjalan mulus
+> lewat Chrome Remote Desktop — video **AV1 ±60 fps**, audio via PipeWire, dan
+> animasi aktif. Detail, bukti, dan batasan:
+> [**docs/wayland-crd.md**](docs/wayland-crd.md).
+
 ## Daftar Isi
 
 - [Cocok untuk](#cocok-untuk)
 - [Alur singkat](#alur-singkat)
 - [Apa yang Anda dapatkan](#apa-yang-anda-dapatkan)
 - [Varian desktop](#varian-desktop)
+- [GNOME 26 Wayland (terverifikasi)](#gnome-26-wayland-terverifikasi)
 - [Persyaratan](#persyaratan)
 - [Cara pakai (5 langkah)](#cara-pakai-5-langkah)
 - [Setelah terhubung](#setelah-terhubung)
@@ -35,7 +41,7 @@ Akses dari browser lewat Chrome Remote Desktop — tanpa install apa pun di komp
 
 ---
 
-Cocok untuk:
+## Cocok untuk
 
 - Eksperimen desktop environment GNOME (extensions, theme, tata letak)
 - Menguji / menjalankan tools GUI (VS Code, Chrome, virt-manager, GNOME Boxes)
@@ -80,6 +86,7 @@ GNOME 26 + CRD (Wayland BETA).
 |---|---|
 | **GNOME Desktop** | Sesi penuh (`ubuntu` GNOME session), bukan XFCE — workflow `GNOME 24.04` |
 | **Cinnamon Desktop** | Cinnamon 6.4 X11 + Nemo + Muffin — workflow `Cinnamon 26` |
+| **GNOME 26 Wayland (terverifikasi)** | GNOME Shell 50 headless di Ubuntu 26.04, virtual monitor 1920x1080, video AV1/±60 fps, audio PipeWire, animasi aktif — [detail](docs/wayland-crd.md) |
 | **Google Chrome** | Bisa langsung dipakai login akun Google |
 | **VS Code** | `code` |
 | **OpenCode CLI + Desktop** | CLI di `/usr/local/bin/opencode`, plus app desktop |
@@ -109,13 +116,27 @@ tidak dipakai.
 | File manager | Nautilus | Nemo |
 | Catatan | Animasi dipaksa hidup lewat ekstensi | Animasi bisa tetap off karena Cinnamon mematikan efek saat software rendering (llvmpipe) |
 
-Ada juga varian eksperimental **GNOME 26 + CRD (Wayland BETA)**
-(`.github/workflows/gnome26-wayland-beta.yml`): GNOME Shell Wayland headless
-di runner `ubuntu-26.04`, desktop vanilla, virtual monitor 1920x1080.
+### GNOME 26 Wayland (terverifikasi)
 
-GNOME 24.04 & Cinnamon 26 memakai runner `ubuntu-24.04`; Wayland BETA memakai
-`ubuntu-26.04`. User `runner` dan alur otorisasi web sama. Pilih salah satu
-workflow saat menjalankan Actions.
+[`gnome26-wayland-beta.yml`](.github/workflows/gnome26-wayland-beta.yml)
+menjalankan **GNOME Shell 50 Wayland headless** di runner `ubuntu-26.04`,
+dengan virtual monitor `1920x1080` dan desktop vanilla (tanpa tema pihak
+ketiga). Diuji **7 November 2026**
+([run 42378799566](https://github.com/ArchDityaa/gnome-crd/actions/runs/42378799566)):
+
+- video **AV1 ±60 fps** (adaptif terhadap klien/jaringan),
+- **audio** lewat PipeWire CRD,
+- **animasi** aktif walau software rendering,
+- input keyboard/mouse via Mutter RemoteDesktop/EI.
+
+Mode Wayland CRD tetap **eksperimental di upstream**. Jika layar sempat blank,
+tunggu 1–2 menit lalu reconnect — watchdog me-restart host otomatis. Panduan
+lengkap, arsitektur, dan troubleshooting:
+**[docs/wayland-crd.md](docs/wayland-crd.md)**.
+
+GNOME 24.04 & Cinnamon 26 memakai runner `ubuntu-24.04`; GNOME 26 Wayland
+memakai `ubuntu-26.04`. User `runner` dan alur otorisasi web sama. Pilih salah
+satu workflow saat menjalankan Actions.
 
 ---
 
@@ -274,6 +295,11 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 - **Maksimal 6 jam per run.** Ini batas job GitHub-hosted. Rencanakan pekerjaan
   Anda; simpan hasil ke GitHub/cloud, karena VM akan hilang setelahnya.
 - **Instance sekali pakai.** Tidak ada penyimpanan permanen antar-run.
+- **GNOME 26 Wayland masih eksperimental di sisi CRD.** Host bisa crash saat
+  EI reconnect; workflow me-restart otomatis. Jika layar blank, tunggu 1–2
+  menit lalu reconnect — jangan langsung cancel.
+- **Audio Wayland** lewat PipeWire CRD; aktifkan audio di klien dan pastikan
+  volume tidak mute.
 - **Window otorisasi 30 menit.** Setelah desktop siap, form web hanya menerima
   perintah selama 30 menit. Kalau habis, workflow gagal dan perlu dijalankan
   ulang (cache `.deb` membuat re-run lebih cepat).
@@ -310,6 +336,8 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 | Halaman form menampilkan error Cloudflare 1033/502 | Tunnel sedang warm-up. Tunggu ±15 detik lalu refresh. Kalau tetap gagal, tunggu URL baru dari log (workflow restart tunnel otomatis). |
 | Registrasi via form gagal | Kode OAuth sudah kedaluwarsa/terpakai. Ambil perintah **baru** di <https://remotedesktop.google.com/headless>, lalu submit lagi ke form yang sama. Tidak perlu re-run selama window 30 menit. |
 | Window 30 menit habis | Workflow berhenti. Jalankan ulang; cache `.deb` membuat instalasi jauh lebih cepat. |
+| GNOME 26 Wayland: layar blank setelah connect | Host CRD bisa crash saat EI reconnect (`gnome_remote_desktop_session.cc:319`). Tunggu 1–2 menit lalu reconnect; watchdog me-restart host otomatis. Kalau persisten, lihat [troubleshooting #15](docs/troubleshooting.md#15-wayland-layar-hitamblank-setelah-connect) atau pakai GNOME 24.04. |
+| GNOME 26 Wayland: audio tidak terdengar | Aktifkan audio di klien CRD dan cek volume; lihat [troubleshooting #16](docs/troubleshooting.md#16-audio-tidak-terdengar-di-wayland). |
 | Device tidak muncul di daftar Remote Access | Tunggu sampai log `[OK] CHROME REMOTE DESKTOP READY` muncul. Kalau masih tidak ada, refresh halaman dan cek service: `systemctl status chrome-remote-desktop@runner`. |
 | Sesi terputus saat update paket | Anda memakai `apt upgrade` polos. Pakai `sudo safe-upgrade`. |
 | Resolusi aneh / layar kecil | Varian X11 dikunci ke `1024x768` (mode native driver `dummy`); Wayland BETA memakai virtual monitor `1920x1080`. Ubah lewat *Settings → Displays* bila perlu. |
@@ -320,6 +348,7 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 
 Panduan lengkap: [`docs/troubleshooting.md`](docs/troubleshooting.md) ·
 Pertanyaan umum: [`docs/faq.md`](docs/faq.md) ·
+Dokumentasi Wayland: [`docs/wayland-crd.md`](docs/wayland-crd.md) ·
 Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots.md)
 
 ---
@@ -332,7 +361,7 @@ Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots
 │   ├── workflows/
 │   │   ├── gnome24.yml             # workflow utama GNOME (Ubuntu 24.04, X11)
 │   │   ├── cinnamon.yml            # workflow Cinnamon 26 (X11, device 'cinnamon')
-│   │   ├── gnome26-wayland-beta.yml # eksperimental (Wayland headless, BETA)
+│   │   ├── gnome26-wayland-beta.yml # GNOME 26 Wayland (terverifikasi; BETA upstream)
 │   │   └── lint.yml                # CI: actionlint + yamllint + shellcheck
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml
@@ -341,6 +370,8 @@ Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots
 │   └── safe-upgrade.sh          # helper anti-putus-sesi
 ├── docs/
 │   ├── images/banner.svg
+│   ├── images/wayland-proof-2026-11-07.png
+│   ├── wayland-crd.md
 │   ├── adding-screenshots.md
 │   ├── troubleshooting.md
 │   └── faq.md

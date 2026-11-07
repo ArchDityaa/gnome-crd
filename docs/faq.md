@@ -207,3 +207,46 @@ di dalam sesi dan meneruskan portnya lewat tunnel. Di luar cakupan repo ini.
 dan/atau `gnome-shell`/`cinnamon`. Gunakan `sudo safe-upgrade` (sudah dipasang;
 di workflow GNOME 24.04 & Cinnamon 26 juga ada shortcut di Desktop) yang
 mencegah restart otomatis.
+
+## Apakah GNOME 26 Wayland benar-benar bisa diakses lewat Chrome Remote Desktop?
+
+Ya. Pada **7 November 2026** sesi GNOME Shell 50.1 Wayland headless di Ubuntu
+26.04 berhasil diakses lewat Chrome Remote Desktop 157 dengan video **AV1
+±60 fps**, audio PipeWire, input keyboard/mouse, dan animasi aktif. Bukti dan
+detail lengkap ada di [`docs/wayland-crd.md`](wayland-crd.md).
+
+Catatan: mode Wayland CRD masih **eksperimental di upstream**. Jika layar
+sempat blank (host crash saat EI reconnect), tunggu 1–2 menit lalu reconnect —
+workflow me-restart host otomatis. Kalau butuh jalur yang sudah lama stabil,
+gunakan workflow **GNOME 24.04 (X11)**.
+
+## Codec video apa yang dipakai — selalu AV1 dan 60 fps?
+
+CRD menegosiasikan codec dan frame rate secara **adaptif**. Pada sesi uji
+teramati **AV1 ±60 fps** di Wi-Fi 5G. Jika klien/CPU tidak mendukung AV1, CRD
+memakai codec lain yang tersedia (mis. VP8/VP9/H.264). Fps dipengaruhi jaringan,
+kemampuan decode klien, resolusi 1920x1080, dan beban CPU runner (software
+rendering).
+
+## Apakah audio ikut lewat Chrome Remote Desktop?
+
+Ya, audio memakai instance PipeWire milik CRD (`crd_audio`). Aplikasi di sesi
+GNOME mengirim audio ke sink `chrome_remote_desktop_session`, lalu CRD
+meneruskannya lewat WebRTC. Pastikan ikon audio di klien CRD tidak mute dan
+volume desktop tidak 0. Cara cek ada di
+[troubleshooting #16](troubleshooting.md#16-audio-tidak-terdengar-di-wayland).
+
+## Kenapa layar GNOME 26 Wayland sempat blank?
+
+Chrome Remote Desktop dapat berhenti dengan fatal error saat sesi EI Mutter
+hilang:
+
+```
+FATAL remoting/host/linux/gnome_remote_desktop_session.cc:319
+Failed to reconnect to EI session
+```
+
+Workflow memitigasi dengan memantau crash dump dan me-restart
+`chrome-remote-desktop@runner`. Jika layar blank: tunggu 1–2 menit, reconnect,
+atau jalankan ulang. Detail di
+[troubleshooting #15](troubleshooting.md#15-wayland-layar-hitamblank-setelah-connect).
