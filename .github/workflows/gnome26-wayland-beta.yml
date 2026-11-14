@@ -667,7 +667,7 @@ jobs:
           sudo tee /etc/systemd/user/org.gnome.Shell@.service.d/10-headless-beta.conf > /dev/null <<'UNIT'
           [Service]
           ExecStart=
-          ExecStart=/usr/bin/gnome-shell --mode=%i --wayland --headless --virtual-monitor 1920x1080
+          ExecStart=/usr/bin/gnome-shell --mode=%i --wayland --headless --virtual-monitor 1920x720
           UNIT
 
           # Mode Wayland CRD dipilih lewat environment service, bukan lewat
@@ -1554,10 +1554,10 @@ jobs:
           fi
           echo "::endgroup::"
 
-          echo "::group::[CHECK] Wayland virtual monitor (1920x1080)"
+          echo "::group::[CHECK] Wayland virtual monitor (1920x720)"
           if grep -q -- "--headless" /etc/systemd/user/org.gnome.Shell@.service.d/10-headless-beta.conf 2>/dev/null &&
-             grep -q -- "--virtual-monitor 1920x1080" /etc/systemd/user/org.gnome.Shell@.service.d/10-headless-beta.conf 2>/dev/null; then
-            echo -e "${C_GREEN}[OK] GNOME Shell headless + virtual monitor 1920x1080.${C_NC}"
+             grep -q -- "--virtual-monitor 1920x720" /etc/systemd/user/org.gnome.Shell@.service.d/10-headless-beta.conf 2>/dev/null; then
+            echo -e "${C_GREEN}[OK] GNOME Shell headless + virtual monitor 1920x720.${C_NC}"
           else
             echo "[WARN] override headless/virtual-monitor tidak sesuai."
           fi
