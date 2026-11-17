@@ -65,7 +65,7 @@ jobs:
       # Cache .deb: restore di awal, save terpisah (`if: always()`) sebelum
       # step registrasi, supaya re-run setelah kegagalan tidak mengunduh ulang.
       - name: Restore apt package cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: /home/runner/apt-archives
           key: apt-ubuntu-2604-${{ steps.dated.outputs.today }}
@@ -397,7 +397,7 @@ jobs:
       - name: Save apt package cache
         if: always()
         continue-on-error: true
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: /home/runner/apt-archives
           key: apt-ubuntu-2604-${{ steps.dated.outputs.today }}
