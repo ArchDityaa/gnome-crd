@@ -424,7 +424,7 @@ actionlint -ignore SC2016 -ignore SC2034 -ignore SC2012 \
 <div align="center">
   <a href="https://github.com/ArchDityaa" title="GitHub: ArchDityaa"><img src="docs/images/archdityaa.png" width="96" height="96" alt="ArchDityaa"></a>
   <h3>ArchDityaa</h3>
-  <p><sub>Developer &amp; maintainer</sub></p>
+  <p><sub>Developer &amp; maintainer · <a href="https://masadityaaa.vercel.app" title="Portfolio: masadityaaa.vercel.app">masadityaaa.vercel.app</a></sub></p>
   <p>
     <a href="https://github.com/ArchDityaa" title="GitHub: ArchDityaa"><img src="docs/images/badges/github.svg" height="34" alt="GitHub: ArchDityaa"></a>
     <a href="https://www.instagram.com/aaaditz_/" title="Instagram: aaaditz_"><img src="docs/images/badges/instagram.svg" height="34" alt="Instagram: aaaditz_"></a>
