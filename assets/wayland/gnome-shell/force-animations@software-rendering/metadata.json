@@ -1,0 +1,7 @@
+{
+  "uuid": "force-animations@software-rendering",
+  "name": "Force Animations on Software Rendering",
+  "description": "Re-enables GNOME Shell animations on VMs, headless/CI desktops, Chrome Remote Desktop and any GPU-less environment that renders with llvmpipe/swrast, where GNOME Shell silently disables every animation.",
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "version-name": "1.1.0"
+}

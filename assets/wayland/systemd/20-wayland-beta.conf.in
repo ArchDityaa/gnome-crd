@@ -1,0 +1,7 @@
+[Service]
+Environment=CHROME_REMOTE_DESKTOP_USE_WAYLAND=GNOME
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_RUNTIME_DIR=/run/user/@RUNNER_UID@
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/@RUNNER_UID@/bus
+Environment=LIBGL_ALWAYS_SOFTWARE=1
+Environment=MUTTER_DEBUG_FORCE_SOFTWARE_RENDER=1
