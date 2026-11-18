@@ -7,6 +7,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Added
 
+- `scripts/gnome24/`, `scripts/cinnamon/`, `scripts/wayland/` — satu skrip per
+  step workflow (ekstraksi 1:1, `set -euo pipefail`), plus helper
+  `scripts/wayland/lib/logging.sh`, `gnome-session-wrapper.sh`, dan tiga skrip
+  Python untuk proof/summary.
+- `assets/gnome24/`, `assets/cinnamon/`, `assets/wayland/` — isi statis yang
+  sebelumnya berupa heredoc di YAML: pin apt, dconf, `.desktop`, template sesi,
+  unit systemd, dan ekstensi GNOME Shell `force-animations@software-rendering`.
+- `.shellcheckrc` — aturan shellcheck repo (`SC2016`/`SC2034`/`SC2012`
+  disengaja) dan `source-path=SCRIPTDIR` agar file `lib/logging.sh` diikuti.
 - `docs/images/archdityaa.png` — avatar bulat developer (sumber: avatar GitHub
   ArchDityaa, di-crop lokal dengan ring indigo).
 - `docs/images/badges/{github,instagram,tiktok,whatsapp}.svg` — badge sosial
@@ -40,13 +49,25 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
   resmi dengan verifikasi checksum), dan skrip shell (`shellcheck`). Berjalan
   pada setiap push ke `main` dan setiap pull request.
 - `.yamllint.yml` — konfigurasi linter YAML (batas panjang baris dimatikan karena
-  workflow berisi perintah shell yang panjang).
+  nama step, komentar bagian, dan ekspresi `${{ }}` bisa melewati 80 kolom).
 - `docs/images/banner.svg` — banner untuk README.
 - `docs/adding-screenshots.md` — panduan mengambil screenshot dari sesi CRD dan
   memasukkannya ke repo (3 cara, termasuk drag & drop lewat Chrome di dalam sesi).
 
 ### Changed
 
+- Refactor workflow menjadi modular: seluruh blok `run:` dan heredoc statis
+  dipindahkan ke `scripts/<workflow>/` dan `assets/<workflow>/`. Ukuran YAML
+  turun drastis — `gnome24.yml` 1.674 → 279 baris, `cinnamon.yml` 1.685 → 272,
+  `gnome26-wayland-beta.yml` 1.834 → 258 — tanpa mengubah urutan/parameter
+  step. Duplikasi antar-varian dipertahankan (tanpa skrip bersama) agar tiap
+  workflow tetap bisa diubah independen.
+- `.github/workflows/lint.yml` — `bash -n` dan `shellcheck -x` sekarang
+  rekursif ke `scripts/` dan `assets/` (sebelumnya hanya `scripts/*.sh`).
+- `.yamllint.yml` — komentar diperbarui: alasan `line-length` dimatikan kini
+  nama step/komentar/ekspresi `${{ }}`, bukan blok shell panjang.
+- README (ID & EN): struktur repo menampilkan `scripts/<workflow>/` dan
+  `assets/<workflow>/`, plus perintah lint lokal yang baru (rekursif).
 - README (ID & EN): bagian **Pengembang/Developer** di paling bawah — avatar,
   nama, role, badge GitHub/Instagram/TikTok/WhatsApp, footer lisensi +
   kembali ke atas; TOC, Kredit/Credits (atribusi Simple Icons), dan struktur

@@ -353,8 +353,16 @@ Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml
 ├── scripts/
+│   ├── gnome24/                 # 1 skrip per step workflow GNOME 24.04
+│   ├── cinnamon/                # 1 skrip per step workflow Cinnamon 26
+│   ├── wayland/                 # 1 skrip per step workflow GNOME 26 Wayland
+│   │   └── lib/logging.sh       # helper log untuk seluruh step Wayland
 │   ├── crd-web-auth.py          # server form otorisasi (token + status)
 │   └── safe-upgrade.sh          # helper anti-putus-sesi
+├── assets/
+│   ├── gnome24/                 # apt pin, dconf, .desktop, session, ekstensi
+│   ├── cinnamon/                # apt pin, dconf, .desktop, session, autostart
+│   └── wayland/                 # apt pin, dconf, unit systemd, ekstensi
 ├── docs/
 │   ├── images/banner.svg
 │   ├── images/archdityaa.png
@@ -373,6 +381,11 @@ Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots
 └── LICENSE
 ```
 
+Setiap blok `run:` substantif di workflow hanya memanggil satu skrip di `scripts/<workflow>/`
+(ekstraksi 1:1, tanpa skrip bersama antar-varian). Isi statis seperti pin apt,
+dconf, `.desktop`, template sesi, unit systemd, dan ekstensi GNOME Shell
+disimpan di `assets/<workflow>/` supaya YAML tetap ringkas dan mudah dibaca.
+
 ---
 
 ## Kontribusi
@@ -385,8 +398,10 @@ Jalankan linter yang sama secara lokal sebelum push:
 ```bash
 pip install yamllint
 yamllint .
-shellcheck scripts/*.sh
-python3 -m py_compile scripts/crd-web-auth.py
+# shellcheck membaca aturan repo dari .shellcheckrc (SC2016/SC2034/SC2012
+# memang disengaja); -x mengikuti file yang di-source.
+find scripts assets -name '*.sh' -print0 | xargs -0 shellcheck -x
+python3 -m py_compile scripts/crd-web-auth.py scripts/wayland/*.py
 # actionlint: https://github.com/rhysd/actionlint
 actionlint -ignore SC2016 -ignore SC2034 -ignore SC2012 \
   -ignore 'label "ubuntu-26.04" is unknown'
