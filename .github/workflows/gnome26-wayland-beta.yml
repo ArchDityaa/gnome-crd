@@ -19,6 +19,14 @@ name: GNOME 26 + CRD (Wayland BETA)
 #       perintah "Debian Linux" -> tempel ke form -> submit.
 #    6. Connect lewat https://remotedesktop.google.com/access (device "gnome").
 #
+#  Tentang log
+#    - Proses install/unduh berjalan "senyap": log tampil sebagai satu baris
+#      per tugas (✔ label + durasi). Log lengkap disimpan di /tmp/ci-logs.
+#    - Saat sebuah tugas gagal, 80 baris terakhirnya langsung dicetak, dan
+#      seluruh log diunggah sebagai artifact `install-logs-<run id>`
+#      (hanya bila job gagal).
+#    - Tab Summary berisi tabel status + durasi tiap step dan info akses.
+#
 #  Catatan
 #    - Input `crd_host_command` hanya fallback bila tunnel gagal dibuat.
 #    - Layar blank setelah connect: tunggu 1-2 menit lalu reconnect; watchdog
@@ -49,17 +57,68 @@ jobs:
         run: echo "today=$(date +'%Y%m%d')" >> "$GITHUB_OUTPUT"
 
       # Helper logging bersama; di-source oleh setiap step berikutnya.
+      #   run_quiet "label" cmd...  -> jalankan senyap, log ke /tmp/ci-logs,
+      #                                tampilkan satu baris hasil (+ durasi).
+      #   Variabel opsional: RQ_SOFT=1 (gagal = peringatan, bukan error),
+      #                      RQ_NOCMD=1 (jangan tulis command line ke log).
+      # CATATAN: fungsi yang diberikan ke run_quiet berjalan dalam konteks `||`,
+      # sehingga `set -e` tidak aktif di dalamnya; gunakan `|| return 1` eksplisit.
       - name: Initialize logging helpers
         run: |
+          rm -rf /tmp/ci-logs /tmp/ci-steps.tsv /tmp/dl
+          mkdir -p /tmp/ci-logs /tmp/dl
           cat > /tmp/ci-lib.sh <<'LIB'
           C_B=$'\033[1m'; C_D=$'\033[2m'; C_R=$'\033[31m'; C_G=$'\033[32m'
           C_Y=$'\033[33m'; C_C=$'\033[36m'; C_N=$'\033[0m'
-          step() { printf '\n%s[%s]%s  %s%s%s\n' "$C_C" "$1" "$C_N" "$C_B" "$2" "$C_N"; }
+          CI_LOG_DIR=/tmp/ci-logs
+          CI_STEPS=/tmp/ci-steps.tsv
+          mkdir -p "$CI_LOG_DIR"
+
+          fmt_dur() {
+            local s="$1"
+            if [ "$s" -ge 60 ]; then printf '%dm%02ds' $((s / 60)) $((s % 60)); else printf '%ds' "$s"; fi
+          }
+          step() {
+            STEP_ID="$1"; STEP_TITLE="$2"; STEP_T0=$(date +%s)
+            printf '\n%s[%s]%s  %s%s%s\n' "$C_C" "$1" "$C_N" "$C_B" "$2" "$C_N"
+            printf 'S\t%s\t%s\t%s\n' "$1" "$2" "$STEP_T0" >> "$CI_STEPS"
+          }
+          step_done() {
+            local dt=$(( $(date +%s) - STEP_T0 ))
+            printf 'D\t%s\t%s\n' "$STEP_ID" "$dt" >> "$CI_STEPS"
+            printf '  %s· selesai dalam %s%s\n' "$C_D" "$(fmt_dur "$dt")" "$C_N"
+          }
           info() { printf '  %s·%s %s\n' "$C_D" "$C_N" "$*"; }
           ok()   { printf '  %s✔%s %s\n' "$C_G" "$C_N" "$*"; }
           warn() { printf '  %s!%s %s\n' "$C_Y" "$C_N" "$*"; }
           fail() { printf '  %s✘%s %s\n' "$C_R" "$C_N" "$*"; echo "::error::$*"; }
           kv()   { printf '    %s%-11s%s %s\n' "$C_D" "$1" "$C_N" "$2"; }
+
+          run_quiet() {
+            local label="$1"; shift
+            local slug log t0 rc=0 dt
+            slug="$(printf '%s' "$label" | tr -c 'A-Za-z0-9' '-' | cut -c1-40)"
+            log="$CI_LOG_DIR/$(date +%H%M%S)-$$-${slug}.log"
+            t0=$(date +%s)
+            {
+              if [ -z "${RQ_NOCMD:-}" ]; then printf '$ %s\n' "$*"; fi
+              "$@"
+            } > "$log" 2>&1 || rc=$?
+            dt=$(( $(date +%s) - t0 ))
+            if [ "$rc" -eq 0 ]; then
+              ok "$label ($(fmt_dur "$dt"))"
+              return 0
+            fi
+            if [ -n "${RQ_SOFT:-}" ]; then
+              warn "$label: gagal (exit $rc, $(fmt_dur "$dt"))"
+            else
+              fail "$label: gagal (exit $rc, $(fmt_dur "$dt"))"
+            fi
+            echo "::group::Log: $label (80 baris terakhir)"
+            tail -n 80 "$log"
+            echo "::endgroup::"
+            return "$rc"
+          }
           LIB
 
       # Cache .deb: restore di awal, save terpisah (`if: always()`) sebelum
@@ -74,15 +133,16 @@ jobs:
 
       # ------------------------------------------------------------------
       # 01 · PREPARE SYSTEM
+      # Semua repo pihak ketiga (VS Code, Chrome, CRD) ditambahkan di sini
+      # agar cukup SATU `apt-get update` untuk seluruh workflow.
       # ------------------------------------------------------------------
       - name: Prepare System
         run: |
           source /tmp/ci-lib.sh
-          step "01/15" "Prepare system"
+          step "01/11" "Prepare system"
 
-          # Waktu mulai job; dipakai Keep Alive untuk menghitung sisa waktu.
+          # Waktu mulai job; dipakai Keep Alive & Summary untuk sisa/total waktu.
           echo "JOB_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
-          __start=$(date +%s)
 
           # Timezone Asia/Jakarta (WIB). timedatectl tidak memperbarui
           # /etc/timezone, jadi keduanya disamakan agar tidak kembali ke UTC.
@@ -98,9 +158,6 @@ jobs:
           sudo ln -sf "/usr/share/zoneinfo/$TZ_TARGET" /etc/localtime
           if [ "$(cat /etc/timezone 2>/dev/null)" != "$TZ_TARGET" ] || [ "$(date +%z)" != "+0700" ]; then
             fail "Timezone tidak ter-set ke $TZ_TARGET"
-            cat /etc/timezone || true
-            ls -l /etc/localtime || true
-            date || true
             exit 1
           fi
           ok "Timezone: $(date +'%Z %z')"
@@ -114,7 +171,6 @@ jobs:
             '$nrconf{kernelhints} = 0;' \
             '$nrconf{check} = 0;' \
             | sudo tee /etc/needrestart/needrestart.conf.d/99-no-restart.conf > /dev/null
-          ok "needrestart dinonaktifkan"
 
           sudo tee /etc/apt/apt.conf.d/99-speed > /dev/null <<'APTEOF'
           Acquire::Retries "5";
@@ -122,46 +178,67 @@ jobs:
           Acquire::http::Pipeline-Depth "10";
           Acquire::Languages "none";
           APTEOF
-          ok "apt dioptimalkan (retry, pipelining)"
+          ok "needrestart dinonaktifkan · apt dioptimalkan"
 
           # Seed cache .deb dari GitHub cache (hemat ~GB saat re-run).
           sudo mkdir -p /var/cache/apt/archives/partial
           sudo cp -a /home/runner/apt-archives/. /var/cache/apt/archives/ 2>/dev/null || true
 
-          info "Memperbarui daftar paket"
-          sudo apt-get update -qq
+          # Repo pihak ketiga: VS Code, Google Chrome, Chrome Remote Desktop.
+          # Kunci Google yang sama dipakai Chrome dan CRD. File
+          # /etc/default/google-chrome mencegah paket Chrome menambah repo-nya
+          # sendiri (menghindari sumber ganda).
+          add_repos() {
+            sudo mkdir -p /etc/apt/keyrings || return 1
+            wget -qO- https://packages.microsoft.com/keys/microsoft.asc \
+              | gpg --dearmor | sudo tee /etc/apt/keyrings/packages.microsoft.gpg > /dev/null || return 1
+            wget -qO- https://dl.google.com/linux/linux_signing_key.pub \
+              | gpg --dearmor | sudo tee /etc/apt/keyrings/google-linux.gpg > /dev/null || return 1
+            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" \
+              | sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null || return 1
+            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+              | sudo tee /etc/apt/sources.list.d/google-chrome.list > /dev/null || return 1
+            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome-remote-desktop/deb/ stable main" \
+              | sudo tee /etc/apt/sources.list.d/chrome-remote-desktop.list > /dev/null || return 1
+            echo 'repo_add_once="false"' | sudo tee /etc/default/google-chrome > /dev/null || return 1
+          }
+          run_quiet "Tambah repo VS Code, Chrome, CRD" add_repos
 
-          info "Menghapus paket yang tidak diperlukan"
-          sudo apt-get remove -y -qq --purge man-db firewalld ufw || true
-          sudo apt-get autoremove -y -qq || true
+          run_quiet "Perbarui daftar paket" sudo apt-get update -qq
+
+          RQ_SOFT=1 run_quiet "Hapus paket tidak diperlukan" \
+            sudo apt-get remove -y -qq --purge man-db firewalld ufw || true
+          RQ_SOFT=1 run_quiet "Autoremove" sudo apt-get autoremove -y -qq || true
 
           # Hapus snapd + paket transisi snap SEBELUM upgrade agar apt tidak
           # menunggu snap store; hold mencegah terpasang kembali.
           sudo systemctl stop snapd.service snapd.socket 2>/dev/null || true
-          sudo apt-get purge -y -qq snapd thunderbird firefox || true
+          RQ_SOFT=1 run_quiet "Hapus snapd & paket transisi snap" \
+            sudo apt-get purge -y -qq snapd thunderbird firefox || true
           sudo apt-mark hold snapd thunderbird firefox > /dev/null
           sudo rm -rf /snap /var/snap /var/lib/snapd /root/snap /home/runner/snap 2>/dev/null || true
-          if command -v snap >/dev/null 2>&1; then warn "snap masih terdeteksi"; else ok "snapd dihapus"; fi
 
           # Full upgrade hanya saat build. Dari dalam sesi CRD gunakan `safe-upgrade`.
-          info "Menjalankan full upgrade"
-          sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -q \
-            -o Dpkg::Options::="--force-unsafe-io" \
-            -o Dpkg::Use-Pty=0
+          run_quiet "Full upgrade sistem" \
+            sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -q \
+              -o Dpkg::Options::="--force-unsafe-io" \
+              -o Dpkg::Use-Pty=0
 
-          ok "Sistem siap ($(( $(date +%s) - __start ))s)"
+          step_done
 
 
       # ------------------------------------------------------------------
-      # 02 · INSTALL GNOME
+      # 02 · DESKTOP + APLIKASI (SATU TRANSAKSI APT)
+      # GNOME, Chrome, VS Code, dan CRD dipasang dalam satu transaksi.
+      # Selama itu, .deb OpenCode Desktop dan cloudflared diunduh di background.
       # ------------------------------------------------------------------
-      - name: Install GNOME Desktop
+      - name: Install Desktop & Applications
         run: |
           source /tmp/ci-lib.sh
           export DEBIAN_FRONTEND=noninteractive
           export NEEDRESTART_MODE=l
           export NEEDRESTART_SUSPEND=1
-          step "02/15" "Install GNOME desktop"
+          step "02/11" "Install desktop & applications"
 
           # Lewati font Noto raksasa (Recommends saja, ±285 MB) dan blokir
           # snapd/thunderbird/firefox (paket transisi snap yang membuat
@@ -178,54 +255,93 @@ jobs:
           Pin-Priority: -10
           PREFE
 
-          info "Memasang paket desktop (±2 GB)"
-          sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
-            -o Dpkg::Options::="--force-confdef" \
-            -o Dpkg::Options::="--force-confold" \
-            -o Dpkg::Use-Pty=0 \
-            ubuntu-desktop \
-            ubuntu-desktop-minimal \
-            ubuntu-session \
-            gnome-session \
-            gnome-shell \
-            gnome-control-center \
-            nautilus \
-            gnome-terminal \
-            dbus-x11 \
-            dbus-user-session \
-            x11-xserver-utils \
-            xwayland \
-            pipewire \
-            pipewire-pulse \
-            wireplumber \
-            xdg-desktop-portal \
-            xdg-desktop-portal-gnome \
-            xorg \
-            adwaita-icon-theme \
-            fonts-cantarell \
-            fonts-ubuntu \
-            yaru-theme-icon \
-            ubuntu-wallpapers \
-            qemu-system-x86 \
-            qemu-utils \
-            libvirt-daemon-system \
-            libvirt-clients \
-            virtinst \
-            xclip \
-            fastfetch \
-            virt-manager \
-            gnome-boxes
+          # Unduhan background (berjalan paralel dengan transaksi apt).
+          mkdir -p /tmp/dl
+          ( RQ_SOFT=1 run_quiet "Unduh OpenCode Desktop" \
+              wget -q https://opencode.ai/download/stable/linux-x64-deb -O /tmp/dl/opencode-desktop.deb
+          ) > "$CI_LOG_DIR/bg-opencode.out" 2>&1 &
+          BG_OPENCODE=$!
+          ( RQ_SOFT=1 run_quiet "Unduh cloudflared" \
+              curl -fsSL --retry 3 --retry-delay 2 -o /tmp/cloudflared \
+              https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
+            && chmod +x /tmp/cloudflared
+          ) > "$CI_LOG_DIR/bg-cloudflared.out" 2>&1 &
+          BG_CLOUDFLARED=$!
+
+          run_quiet "Pasang GNOME, Chrome, VS Code & CRD (±2 GB)" \
+            sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
+              -o Dpkg::Options::="--force-confdef" \
+              -o Dpkg::Options::="--force-confold" \
+              -o Dpkg::Use-Pty=0 \
+              ubuntu-desktop \
+              ubuntu-desktop-minimal \
+              ubuntu-session \
+              gnome-session \
+              gnome-shell \
+              gnome-control-center \
+              nautilus \
+              gnome-terminal \
+              dbus-x11 \
+              dbus-user-session \
+              x11-xserver-utils \
+              xwayland \
+              pipewire \
+              pipewire-pulse \
+              wireplumber \
+              xdg-desktop-portal \
+              xdg-desktop-portal-gnome \
+              xorg \
+              adwaita-icon-theme \
+              fonts-cantarell \
+              fonts-ubuntu \
+              yaru-theme-icon \
+              ubuntu-wallpapers \
+              qemu-system-x86 \
+              qemu-utils \
+              libvirt-daemon-system \
+              libvirt-clients \
+              virtinst \
+              xclip \
+              fastfetch \
+              virt-manager \
+              gnome-boxes \
+              google-chrome-stable \
+              code \
+              chrome-remote-desktop
+
+          # Hasil unduhan background (kegagalan tidak fatal: OpenCode Desktop
+          # diunduh ulang di step 04, cloudflared di step 10).
+          wait "$BG_OPENCODE" || true
+          wait "$BG_CLOUDFLARED" || true
+          cat "$CI_LOG_DIR/bg-opencode.out" "$CI_LOG_DIR/bg-cloudflared.out" 2>/dev/null || true
 
           sudo rm -f /etc/apt/preferences.d/99-no-snap.pref /etc/apt/preferences.d/99-no-noto-heavy
 
           # Tidak ada paket yang hard-depends ke snapd di install graph ini.
-          sudo apt-get purge -y -qq snapd thunderbird firefox || true
+          RQ_SOFT=1 run_quiet "Hapus snapd & paket transisi snap" \
+            sudo apt-get purge -y -qq snapd thunderbird firefox || true
           sudo apt-mark hold snapd thunderbird firefox > /dev/null
           sudo rm -rf /snap /var/snap /var/lib/snapd /root/snap /home/runner/snap 2>/dev/null || true
-          if command -v snap >/dev/null 2>&1; then warn "snap masih terdeteksi"; else ok "snap dihapus permanen"; fi
+          if command -v snap >/dev/null 2>&1; then warn "snap masih terdeteksi"; fi
 
-          sudo glib-compile-schemas /usr/share/glib-2.0/schemas/ || true
-          ok "GNOME terpasang: $(gnome-shell --version 2>/dev/null || echo 'versi tidak terbaca')"
+          run_quiet "Kompilasi GSettings schemas" sudo glib-compile-schemas /usr/share/glib-2.0/schemas/ || true
+
+          # CRD menjalankan instance PipeWire sendiri (crd_audio). Template
+          # bawaan hanya memetakan audio.convert; tanpa video.convert PipeWire
+          # gagal menyisipkan adapter ("no more input formats") dan layar hitam.
+          # Idempoten; file vendor dapat berubah saat paket CRD di-upgrade.
+          PW_TEMPLATE=/opt/google/chrome-remote-desktop/pipewire.conf.template
+          if [ -f "$PW_TEMPLATE" ] && ! sudo grep -q 'video\.convert' "$PW_TEMPLATE"; then
+            sudo sed -i '/audio\.convert\.\*/a\    video.convert.* = videoconvert/libspa-videoconvert' "$PW_TEMPLATE"
+            ok "Template PipeWire CRD: video.convert ditambahkan"
+          fi
+
+          ok "GNOME: $(gnome-shell --version 2>/dev/null || echo '?')"
+          ok "Chrome: $(google-chrome --version 2>/dev/null || echo '?')"
+          ok "VS Code: $(code --version 2>/dev/null | head -n 1 || echo '?')"
+          ok "CRD: $(dpkg-query -W -f='${Version}' chrome-remote-desktop 2>/dev/null || echo '?')"
+
+          step_done
 
 
       # ------------------------------------------------------------------
@@ -234,7 +350,7 @@ jobs:
       - name: Setup Remote User
         run: |
           source /tmp/ci-lib.sh
-          step "03/15" "Setup remote user"
+          step "03/11" "Setup remote user"
 
           sudo useradd -m -s /bin/bash runner || true
           echo "runner:root" | sudo chpasswd
@@ -250,9 +366,12 @@ jobs:
           sudo usermod -aG kvm runner || warn "grup 'kvm' tidak ada di runner ini (KVM nonaktif)"
           sudo usermod -aG libvirt runner || true
 
-          # Restart daemon CRD agar systemd membaca ulang grup (kvm, libvirt);
-          # tanpa ini virt-manager gagal di libvirt-sock dan /dev/kvm tak terbaca.
-          sudo systemctl restart chrome-remote-desktop@runner 2>/dev/null || true
+          # Bila daemon CRD sudah berjalan (mis. re-run), restart agar systemd
+          # membaca ulang grup (kvm, libvirt); tanpa ini virt-manager gagal di
+          # libvirt-sock dan /dev/kvm tak terbaca.
+          if systemctl is-active --quiet chrome-remote-desktop@runner 2>/dev/null; then
+            sudo systemctl restart chrome-remote-desktop@runner 2>/dev/null || true
+          fi
           if sudo -u runner test -r /dev/kvm && sudo -u runner test -w /dev/kvm; then
             ok "KVM tersedia untuk runner"
           else
@@ -265,123 +384,45 @@ jobs:
           sudo chown -R runner:runner /home/runner
 
           ok "User siap: $(id runner)"
+          step_done
 
 
       # ------------------------------------------------------------------
-      # 04 · GOOGLE CHROME
+      # 04 · OPENCODE (CLI + DESKTOP)
       # ------------------------------------------------------------------
-      - name: Install Google Chrome
+      - name: Install OpenCode
         run: |
           source /tmp/ci-lib.sh
-          step "04/15" "Install Google Chrome"
+          step "04/11" "Install OpenCode"
 
-          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-            -O /tmp/google-chrome.deb
-          sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
-            -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
-            -o Dpkg::Use-Pty=0 /tmp/google-chrome.deb
-          rm -f /tmp/google-chrome.deb
-
-          ok "$(google-chrome --version)"
-
-
-      # ------------------------------------------------------------------
-      # 05 · VS CODE
-      # ------------------------------------------------------------------
-      - name: Install VS Code
-        run: |
-          source /tmp/ci-lib.sh
-          step "05/15" "Install VS Code"
-
-          wget -qO- https://packages.microsoft.com/keys/microsoft.asc \
-            | gpg --dearmor \
-            | sudo tee /etc/apt/keyrings/packages.microsoft.gpg > /dev/null
-          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" \
-            | sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
-
-          sudo apt-get update -qq
-          sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
-            -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
-            -o Dpkg::Use-Pty=0 code
-
-          ok "VS Code $(code --version | head -n 1)"
-
-
-      # ------------------------------------------------------------------
-      # 06 · OPENCODE CLI
-      # ------------------------------------------------------------------
-      - name: Install OpenCode CLI
-        run: |
-          source /tmp/ci-lib.sh
-          step "06/15" "Install OpenCode CLI"
-
-          sudo apt-get update -qq
-          sudo apt-get install -y -q \
-            -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
-            -o Dpkg::Use-Pty=0 curl
+          if ! command -v curl > /dev/null 2>&1; then
+            run_quiet "Pasang curl" sudo apt-get install -y -qq curl
+          fi
 
           # Installer selalu memasang ke $HOME/.opencode/bin (mengabaikan
           # OPENCODE_INSTALL_DIR); PATH diekspor manual untuk step ini.
-          curl -fsSL https://opencode.ai/v2/install | bash
+          install_opencode_cli() { ( set -o pipefail; curl -fsSL https://opencode.ai/v2/install | bash ); }
+          run_quiet "OpenCode CLI" install_opencode_cli
           export PATH="$HOME/.opencode/bin:$PATH"
 
           # Salin system-wide agar tersedia untuk root, runner, dan GNOME Terminal.
           sudo cp "$HOME/.opencode/bin/opencode" /usr/local/bin/opencode || true
           sudo chmod +x /usr/local/bin/opencode || true
+          ok "OpenCode CLI $(opencode --version)"
 
-          ok "OpenCode CLI $(opencode --version) ($(which opencode))"
-
-
-      # ------------------------------------------------------------------
-      # 07 · OPENCODE DESKTOP
-      # ------------------------------------------------------------------
-      - name: Install OpenCode Desktop
-        run: |
-          source /tmp/ci-lib.sh
-          step "07/15" "Install OpenCode Desktop"
-
-          wget -q https://opencode.ai/download/stable/linux-x64-deb -O /tmp/opencode-desktop.deb
-          sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
-            -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
-            -o Dpkg::Use-Pty=0 /tmp/opencode-desktop.deb
-          rm -f /tmp/opencode-desktop.deb
-
-          ok "OpenCode Desktop terpasang"
-          dpkg -l | grep -i opencode || true
-
-
-      # ------------------------------------------------------------------
-      # 08 · CHROME REMOTE DESKTOP
-      # ------------------------------------------------------------------
-      - name: Install Chrome Remote Desktop
-        run: |
-          source /tmp/ci-lib.sh
-          step "08/15" "Install Chrome Remote Desktop"
-
-          wget -qO- https://dl.google.com/linux/linux_signing_key.pub \
-            | gpg --dearmor \
-            | sudo tee /etc/apt/keyrings/google-linux.gpg > /dev/null
-          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome-remote-desktop/deb/ stable main" \
-            | sudo tee /etc/apt/sources.list.d/chrome-remote-desktop.list > /dev/null
-
-          sudo apt-get update -qq
-          sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
-            -o Dpkg::Options::="--force-confdef" \
-            -o Dpkg::Options::="--force-confold" \
-            -o Dpkg::Use-Pty=0 \
-            chrome-remote-desktop
-
-          # CRD menjalankan instance PipeWire sendiri (crd_audio). Template
-          # bawaan hanya memetakan audio.convert; tanpa video.convert PipeWire
-          # gagal menyisipkan adapter ("no more input formats") dan layar hitam.
-          # Idempoten; file vendor dapat berubah saat paket CRD di-upgrade.
-          PW_TEMPLATE=/opt/google/chrome-remote-desktop/pipewire.conf.template
-          if [ -f "$PW_TEMPLATE" ] && ! sudo grep -q 'video\.convert' "$PW_TEMPLATE"; then
-            sudo sed -i '/audio\.convert\.\*/a\    video.convert.* = videoconvert/libspa-videoconvert' "$PW_TEMPLATE"
-            info "Mapping video.convert ditambahkan ke template PipeWire CRD"
+          # .deb sudah diunduh di background pada step 02; unduh ulang bila belum ada.
+          mkdir -p /tmp/dl
+          if [ ! -s /tmp/dl/opencode-desktop.deb ]; then
+            run_quiet "Unduh OpenCode Desktop" \
+              wget -q https://opencode.ai/download/stable/linux-x64-deb -O /tmp/dl/opencode-desktop.deb
           fi
+          run_quiet "OpenCode Desktop" \
+            sudo NEEDRESTART_MODE=l DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
+              -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+              -o Dpkg::Use-Pty=0 /tmp/dl/opencode-desktop.deb
+          rm -f /tmp/dl/opencode-desktop.deb
 
-          ok "Chrome Remote Desktop $(dpkg-query -W -f='${Version}' chrome-remote-desktop 2>/dev/null || echo '')"
+          step_done
 
       # Salin arsip .deb sebelum registrasi; bila step registrasi gagal,
       # re-run tidak perlu mengunduh ulang.
@@ -404,7 +445,7 @@ jobs:
 
 
       # ------------------------------------------------------------------
-      # 09 · GNOME WAYLAND SESSION (BETA)
+      # 05 · GNOME WAYLAND SESSION (BETA)
       # Ubuntu 26.04 / GNOME 50 hanya mendukung Wayland, sedangkan CRD stabil
       # masih X11. Beta ini memakai mode Wayland eksperimental CRD + GNOME
       # Shell headless dengan virtual monitor (tanpa Xorg/Xvfb).
@@ -412,7 +453,7 @@ jobs:
       - name: Configure GNOME Wayland Session (BETA)
         run: |
           source /tmp/ci-lib.sh
-          step "09/15" "Configure GNOME Wayland session (BETA)"
+          step "05/11" "Configure GNOME Wayland session (BETA)"
 
           test -x /usr/bin/gnome-session || { fail "/usr/bin/gnome-session tidak ditemukan"; exit 1; }
           test -x /usr/bin/gnome-shell   || { fail "/usr/bin/gnome-shell tidak ditemukan"; exit 1; }
@@ -438,7 +479,6 @@ jobs:
               "$@"
           }
 
-          info "Menunggu systemd --user dan D-Bus session bus"
           for i in {1..30}; do
             if [ -S "/run/user/$RUNNER_UID/systemd/private" ] && [ -S "/run/user/$RUNNER_UID/bus" ]; then
               break
@@ -455,19 +495,19 @@ jobs:
             ls -la "/run/user/$RUNNER_UID" || true
             exit 1
           fi
+          ok "systemd --user + D-Bus session bus aktif"
 
           # Paksa environment user manager ke Wayland (org.gnome.Shell@.service
           # memiliki AssertEnvironment=XDG_SESSION_TYPE=wayland).
           # XDG_CURRENT_DESKTOP tidak menentukan session mode: CRD selalu
           # memaksa "GNOME" untuk sesi Wayland, sehingga wallpaper/tema di-set
-          # eksplisit lewat dconf (step 10).
+          # eksplisit lewat dconf (step 06).
           as_runner systemctl --user set-environment \
             XDG_SESSION_TYPE=wayland \
             XDG_CURRENT_DESKTOP=GNOME \
             XDG_SESSION_DESKTOP=ubuntu
           as_runner systemctl --user unset-environment \
             WAYLAND_DISPLAY DISPLAY XAUTHORITY GNOME_SETUP_DISPLAY 2>/dev/null || true
-          ok "Environment user manager: Wayland"
 
           # CRD memanggil `gnome-session` tanpa argumen, sementara satu-satunya
           # mode GNOME Shell yang tersedia adalah "ubuntu". Wrapper memaksanya.
@@ -480,8 +520,7 @@ jobs:
           # Jalur kedua bila CRD memanggil /usr/bin/gnome-session secara absolut.
           sudo -u runner env HOME=/home/runner \
             dbus-run-session -- \
-            gsettings set org.gnome.desktop.session session-name ubuntu || true
-          ok "Session default: ubuntu"
+            gsettings set org.gnome.desktop.session session-name ubuntu > /dev/null 2>&1 || true
 
           # GNOME Shell 50 tidak punya backend X11; pada runner tanpa GPU shell
           # dijalankan sebagai compositor headless dengan satu virtual monitor.
@@ -491,7 +530,6 @@ jobs:
           ExecStart=
           ExecStart=/usr/bin/gnome-shell --mode=%i --wayland --headless --virtual-monitor 1280x720
           UNIT
-          ok "GNOME Shell headless (virtual monitor 1280x720)"
 
           # Mode Wayland CRD dipilih lewat environment service. Drop-in ini juga
           # menyediakan bus address yang dibutuhkan gnome-session (crbug.com/432108529).
@@ -505,7 +543,6 @@ jobs:
           Environment=LIBGL_ALWAYS_SOFTWARE=1
           Environment=MUTTER_DEBUG_FORCE_SOFTWARE_RENDER=1
           UNIT
-          ok "CRD drop-in: mode Wayland"
 
           sudo systemctl daemon-reload
           as_runner systemctl --user daemon-reload
@@ -515,33 +552,41 @@ jobs:
           sudo -u runner rm -f /home/runner/.config/autostart/set-resolution.desktop
           sudo rm -f /usr/local/bin/set-resolution.sh
 
-          echo "::group::Konfigurasi terpasang"
-          systemctl cat chrome-remote-desktop@runner.service | tail -n 20 || true
-          as_runner systemctl --user cat org.gnome.Shell@.service 2>/dev/null | tail -n 20 || true
-          as_runner systemctl --user show-environment | grep -E '^(XDG|DBUS)' || true
-          echo "::endgroup::"
+          # Detail konfigurasi disimpan ke log (ikut artifact bila job gagal).
+          {
+            echo "--- CRD service drop-in ---"
+            systemctl cat chrome-remote-desktop@runner.service | tail -n 20 || true
+            echo "--- GNOME Shell user override ---"
+            as_runner systemctl --user cat org.gnome.Shell@.service 2>/dev/null | tail -n 20 || true
+            echo "--- systemd user environment ---"
+            as_runner systemctl --user show-environment | grep -E '^(XDG|DBUS)' || true
+          } > "$CI_LOG_DIR/wayland-config.log" 2>&1 || true
 
           if ! as_runner systemctl --user show-environment | grep -q '^XDG_SESSION_TYPE=wayland$'; then
             fail "Environment systemd user bukan wayland"
+            tail -n 60 "$CI_LOG_DIR/wayland-config.log" || true
             exit 1
           fi
           if ! systemctl cat chrome-remote-desktop@runner.service | grep -q 'CHROME_REMOTE_DESKTOP_USE_WAYLAND=GNOME'; then
             fail "Drop-in CRD Wayland tidak terbaca"
+            tail -n 60 "$CI_LOG_DIR/wayland-config.log" || true
             exit 1
           fi
 
-          ok "Sesi Wayland (BETA) terkonfigurasi"
+          ok "Environment user manager: Wayland"
+          ok "GNOME Shell headless (virtual monitor 1280x720) · CRD drop-in Wayland"
+          step_done
 
 
       # ------------------------------------------------------------------
-      # 10 · SCREENSAVER / LOCK / TAMPILAN
+      # 06 · SCREENSAVER / LOCK / TAMPILAN
       # Mencegah GNOME mengunci/mematikan layar yang memutus sesi CRD, dan
       # menetapkan tampilan default Ubuntu (dark mode).
       # ------------------------------------------------------------------
       - name: Disable Screensaver and Lock
         run: |
           source /tmp/ci-lib.sh
-          step "10/15" "Disable screensaver and lock · apply appearance"
+          step "06/11" "Disable screensaver & lock · apply appearance"
 
           sudo mkdir -p /etc/dconf/db/local.d || true
           sudo tee /etc/dconf/db/local.d/99-crd-no-lock > /dev/null <<'EOF'
@@ -556,15 +601,6 @@ jobs:
           sleep-inactive-battery-type='nothing'
           ambient-enabled=false
           EOF
-          sudo dconf update || true
-
-          # Fallback gsettings per-user (abaikan bila dbus belum tersedia).
-          gs_set() { sudo -u runner dbus-launch --exit-with-session gsettings set "$@" || true; }
-          gs_set org.gnome.desktop.screensaver lock-enabled false
-          gs_set org.gnome.desktop.screensaver idle-activation-enabled false
-          gs_set org.gnome.desktop.session idle-delay 0
-          gs_set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
-          ok "Lock, screensaver, dan suspend dinonaktifkan"
 
           # CRD memaksa XDG_CURRENT_DESKTOP=GNOME, sehingga override
           # [schema:ubuntu] tidak berlaku dan wallpaper jatuh ke adwaita-*.jxl
@@ -596,8 +632,16 @@ jobs:
           color-scheme='prefer-dark'
           gtk-theme='Yaru-dark'
           EOF
-          sudo dconf update || true
+          sudo dconf update > /dev/null 2>&1 || true
 
+          # Fallback gsettings per-user (abaikan bila dbus belum tersedia).
+          gs_set() {
+            sudo -u runner dbus-launch --exit-with-session gsettings set "$@" >> "$CI_LOG_DIR/appearance.log" 2>&1 || true
+          }
+          gs_set org.gnome.desktop.screensaver lock-enabled false
+          gs_set org.gnome.desktop.screensaver idle-activation-enabled false
+          gs_set org.gnome.desktop.session idle-delay 0
+          gs_set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
           gs_set org.gnome.desktop.background picture-uri 'file:///usr/share/backgrounds/warty-final-ubuntu.png'
           gs_set org.gnome.desktop.background picture-uri-dark 'file:///usr/share/backgrounds/ubuntu-wallpaper-d.png'
           gs_set org.gnome.desktop.background primary-color '#2c001e'
@@ -612,11 +656,13 @@ jobs:
           gs_set org.gnome.desktop.interface gtk-theme 'Yaru-dark'
 
           sudo chown -R runner:runner /home/runner/.config || true
+          ok "Lock, screensaver, dan suspend dinonaktifkan"
           ok "Tampilan: Ubuntu default · dark mode (prefer-dark + Yaru-dark)"
+          step_done
 
 
       # ------------------------------------------------------------------
-      # 11 · ANIMASI PADA SOFTWARE RENDERING
+      # 07 · ANIMASI PADA SOFTWARE RENDERING
       #
       # Sesi headless tanpa GPU membuat Mutter melaporkan rendering non-
       # hardware, sehingga GNOME Shell memanggil St.Settings.inhibit_animations()
@@ -627,7 +673,7 @@ jobs:
       - name: Enable GNOME Shell Animations (software rendering fix)
         run: |
           source /tmp/ci-lib.sh
-          step "11/15" "Enable animations on software rendering"
+          step "07/11" "Enable animations on software rendering"
 
           UUID="force-animations@software-rendering"
           EXT_DIR="/usr/share/gnome-shell/extensions/$UUID"
@@ -710,7 +756,6 @@ jobs:
 
           sudo chmod 0755 "$EXT_DIR"
           sudo chmod 0644 "$EXT_DIR/metadata.json" "$EXT_DIR/extension.js"
-          ok "Extension terpasang: $UUID"
 
           sudo mkdir -p /etc/environment.d
           printf 'GNOME_SHELL_SLOWDOWN_FACTOR=2.5\n' | sudo tee /etc/environment.d/99-gnome-animation-slow.conf > /dev/null
@@ -728,24 +773,26 @@ jobs:
           if ! sudo grep -qs '^system-db:local' /etc/dconf/profile/user 2>/dev/null; then
             printf 'user-db:user\nsystem-db:local\n' | sudo tee /etc/dconf/profile/user > /dev/null
           fi
-          sudo dconf update || true
+          sudo dconf update > /dev/null 2>&1 || true
 
           # Fallback gsettings per-user untuk 'runner'.
-          sudo -u runner dbus-run-session -- gsettings set org.gnome.shell enabled-extensions "['$UUID']" || true
-          sudo -u runner dbus-run-session -- gsettings set org.gnome.desktop.interface enable-animations true || true
+          sudo -u runner dbus-run-session -- gsettings set org.gnome.shell enabled-extensions "['$UUID']" >> "$CI_LOG_DIR/appearance.log" 2>&1 || true
+          sudo -u runner dbus-run-session -- gsettings set org.gnome.desktop.interface enable-animations true >> "$CI_LOG_DIR/appearance.log" 2>&1 || true
           sudo chown -R runner:runner /home/runner/.config || true
 
+          ok "Extension terpasang: $UUID"
           ok "Animasi aktif via global.force_animations (slow-down 2.5×)"
+          step_done
 
 
       # ------------------------------------------------------------------
-      # 12 · SAFE-UPGRADE HELPER
+      # 08 · SAFE-UPGRADE HELPER
       # Pengganti `sudo apt upgrade` yang memutus sesi CRD.
       # ------------------------------------------------------------------
       - name: Install Safe Upgrade Helper
         run: |
           source /tmp/ci-lib.sh
-          step "12/15" "Install safe-upgrade helper"
+          step "08/11" "Install safe-upgrade helper"
 
           if [ ! -f "$GITHUB_WORKSPACE/scripts/safe-upgrade.sh" ]; then
             fail "scripts/safe-upgrade.sh tidak ditemukan (checkout gagal)"
@@ -761,10 +808,11 @@ jobs:
 
           safe-upgrade --help > /dev/null 2>&1 || true
           ok "safe-upgrade terpasang: /usr/local/bin/safe-upgrade"
+          step_done
 
 
       # ------------------------------------------------------------------
-      # 13 · CRD PIN
+      # 09 · CRD PIN
       # Default 123456; ubah lewat GitHub Actions secret CRD_PIN.
       # ------------------------------------------------------------------
       - name: Configure CRD PIN
@@ -772,14 +820,14 @@ jobs:
           CUSTOM_CRD_PIN: ${{ secrets.CRD_PIN }}
         run: |
           source /tmp/ci-lib.sh
-          step "13/15" "Configure CRD PIN"
+          step "09/11" "Configure CRD PIN"
 
           if [ -n "$CUSTOM_CRD_PIN" ]; then
             CRD_PIN="$CUSTOM_CRD_PIN"
-            PIN_SOURCE="secret CRD_PIN"
+            PIN_SOURCE="secret"
           else
             CRD_PIN="123456"
-            PIN_SOURCE="default (belum ada secret CRD_PIN)"
+            PIN_SOURCE="default"
           fi
 
           if ! [[ "$CRD_PIN" =~ ^[0-9]{6,}$ ]]; then
@@ -789,12 +837,18 @@ jobs:
 
           echo "::add-mask::$CRD_PIN"
           echo "CRD_PIN=$CRD_PIN" >> "$GITHUB_ENV"
+          echo "CRD_PIN_SOURCE=$PIN_SOURCE" >> "$GITHUB_ENV"
 
-          ok "PIN dikonfigurasi · sumber: $PIN_SOURCE"
+          if [ "$PIN_SOURCE" = "secret" ]; then
+            ok "PIN dikonfigurasi (secret CRD_PIN)"
+          else
+            ok "PIN dikonfigurasi (default, belum ada secret CRD_PIN)"
+          fi
+          step_done
 
 
       # ------------------------------------------------------------------
-      # 14 · OTORISASI + REGISTRASI CRD
+      # 10 · OTORISASI + REGISTRASI CRD
       #
       # Kode OAuth `--code=...` bersifat sekali pakai dan cepat kedaluwarsa,
       # sedangkan instalasi desktop memakan 20-40 menit. Karena itu setelah
@@ -811,7 +865,7 @@ jobs:
           FALLBACK_CMD: ${{ inputs.crd_host_command }}
         run: |
           source /tmp/ci-lib.sh
-          step "14/15" "Authorize & register Chrome Remote Desktop"
+          step "10/11" "Authorize & register Chrome Remote Desktop"
 
           STATE_DIR=/tmp/crd-web-auth
           SERVER="$GITHUB_WORKSPACE/scripts/crd-web-auth.py"
@@ -855,11 +909,11 @@ jobs:
           fi
           ok "Form server aktif di 127.0.0.1:$PORT"
 
+          # cloudflared biasanya sudah diunduh di background pada step 02.
           CLOUDFLARED=/tmp/cloudflared
           if [ ! -x "$CLOUDFLARED" ]; then
-            info "Mengunduh cloudflared"
-            curl -fsSL --retry 3 --retry-delay 2 \
-              -o "$CLOUDFLARED" \
+            run_quiet "Unduh cloudflared" \
+              curl -fsSL --retry 3 --retry-delay 2 -o "$CLOUDFLARED" \
               https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
             chmod +x "$CLOUDFLARED"
           fi
@@ -961,19 +1015,18 @@ jobs:
             fi
             clean="$clean --name=\"gnome\""
 
+            # RQ_NOCMD: command line (berisi kode OAuth + PIN) tidak ditulis ke log.
             rc=1
             for attempt in 1 2 3; do
               python3 "$SERVER" set-status registering \
                 "Mendaftarkan perangkat... (percobaan ${attempt}/3)" --attempts "$attempt" || true
-              info "Registrasi perangkat (percobaan ${attempt}/3)"
-              if sudo -u runner \
-                env CRD_PIN="$CRD_PIN" \
-                bash -c "$clean --pin=\"$CRD_PIN\""; then
+              if RQ_SOFT=1 RQ_NOCMD=1 run_quiet "Registrasi perangkat (percobaan ${attempt}/3)" \
+                   sudo -u runner env CRD_PIN="$CRD_PIN" bash -c "$clean --pin=\"$CRD_PIN\""; then
                 rc=0
                 break
               fi
               if [ "$attempt" -lt 3 ]; then
-                warn "Registrasi gagal (kode kedaluwarsa/terpakai atau error transien) · coba lagi dalam $((attempt * 5))s"
+                info "Kode mungkin kedaluwarsa/terpakai atau error transien · coba lagi dalam $((attempt * 5))s"
                 sleep $((attempt * 5))
               fi
             done
@@ -1091,7 +1144,6 @@ jobs:
 
           # Pastikan GNOME Shell benar-benar menjadi compositor Wayland headless;
           # tanpa WAYLAND_DISPLAY di systemd user env, CRD tidak dapat men-stream desktop.
-          info "Menunggu compositor Wayland headless"
           WAYLAND_READY=0
           WAYLAND_SOCKET=""
           for i in {1..45}; do
@@ -1130,12 +1182,12 @@ jobs:
           fi
 
           ok "Compositor Wayland aktif ($WAYLAND_SOCKET)"
-          echo "::group::Detail · GNOME Shell & host CRD"
-          as_runner systemctl --user status org.gnome.Shell@ubuntu.service --no-pager || true
-          pgrep -a -x gnome-shell || true
-          pgrep -a -x gnome-session || true
-          sudo journalctl -u chrome-remote-desktop@runner -n 40 --no-pager || true
-          echo "::endgroup::"
+          {
+            as_runner systemctl --user status org.gnome.Shell@ubuntu.service --no-pager || true
+            pgrep -a -x gnome-shell || true
+            pgrep -a -x gnome-session || true
+            sudo journalctl -u chrome-remote-desktop@runner -n 40 --no-pager || true
+          } > "$CI_LOG_DIR/crd-ready-detail.log" 2>&1 || true
 
           echo ""
           ok "Chrome Remote Desktop siap (Wayland BETA)"
@@ -1144,15 +1196,18 @@ jobs:
           kv "Pengguna" "runner"
           kv "PIN" "default 123456, atau secret CRD_PIN"
           echo "::notice::CRD siap - connect lewat https://remotedesktop.google.com/access (device: gnome, user: runner)"
+          step_done
 
 
       # ------------------------------------------------------------------
-      # 15 · VERIFY
+      # 11 · VERIFY
+      # Output sukses ringkas; diagnostik lengkap hanya dicetak bila gagal
+      # (selalu disimpan di /tmp/ci-logs/verify-details.log).
       # ------------------------------------------------------------------
       - name: Verify Installation
         run: |
           source /tmp/ci-lib.sh
-          step "15/15" "Verify installation"
+          step "11/11" "Verify installation"
 
           RUNNER_UID=$(id -u runner)
           as_runner() {
@@ -1163,37 +1218,46 @@ jobs:
           }
           gs_get() { sudo -u runner dbus-run-session -- gsettings get "$@" 2>/dev/null | tr -d "'" || true; }
 
-          echo "::group::Wayland session"
-          gnome-shell --version || true
+          DETAIL="$CI_LOG_DIR/verify-details.log"
+          {
+            echo "## system";            uname -a
+            echo "## gnome-shell";       gnome-shell --version
+            echo "## CRD unit";          systemctl cat chrome-remote-desktop@runner 2>/dev/null | tail -n 40
+            echo "## headless override"; cat /etc/systemd/user/org.gnome.Shell@.service.d/10-headless-beta.conf
+            echo "## user environment";  as_runner systemctl --user show-environment 2>/dev/null | grep -E 'WAYLAND_DISPLAY|XDG_SESSION_TYPE|XDG_CURRENT_DESKTOP|XDG_SESSION_DESKTOP'
+            echo "## shell status";      as_runner systemctl --user status org.gnome.Shell@ubuntu.service --no-pager 2>/dev/null
+            echo "## shell journal";     as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 40 --no-pager 2>/dev/null
+            echo "## CRD status";        systemctl status chrome-remote-desktop@runner --no-pager
+            echo "## extension";         ls -l /usr/share/gnome-shell/extensions/force-animations@software-rendering/
+            echo "## kvm";               ls -l /dev/kvm; getent group kvm libvirt
+            echo "## opencode";          dpkg -l | grep -i opencode
+          } > "$DETAIL" 2>&1 || true
+
+          verify_fail() {
+            fail "$1"
+            echo "::group::Diagnostik"
+            tail -n 150 "$DETAIL" || true
+            echo "::endgroup::"
+            exit 1
+          }
+
+          # --- Wayland + CRD ---
           if [ -e /home/runner/.chrome-remote-desktop-session ]; then
             warn ".chrome-remote-desktop-session masih ada (tidak dipakai mode Wayland)"
-          else
-            ok "Tidak ada sisa konfigurasi sesi X11"
           fi
-          systemctl cat chrome-remote-desktop@runner 2>/dev/null | tail -n 40 || true
-          cat /etc/systemd/user/org.gnome.Shell@.service.d/10-headless-beta.conf || true
-          as_runner systemctl --user show-environment 2>/dev/null | grep -E 'WAYLAND_DISPLAY|XDG_SESSION_TYPE|XDG_CURRENT_DESKTOP|XDG_SESSION_DESKTOP' || true
-
           WAYLAND_DISPLAY_VALUE=$(as_runner systemctl --user show-environment 2>/dev/null | sed -n 's/^WAYLAND_DISPLAY=//p')
           if [ -z "$WAYLAND_DISPLAY_VALUE" ]; then
-            fail "WAYLAND_DISPLAY belum diekspor ke systemd user environment"
-            exit 1
+            verify_fail "WAYLAND_DISPLAY belum diekspor ke systemd user environment"
           fi
           if [ ! -S "/run/user/$RUNNER_UID/$WAYLAND_DISPLAY_VALUE" ]; then
-            fail "Socket Wayland tidak ada: /run/user/$RUNNER_UID/$WAYLAND_DISPLAY_VALUE"
-            exit 1
+            verify_fail "Socket Wayland tidak ada: /run/user/$RUNNER_UID/$WAYLAND_DISPLAY_VALUE"
           fi
           ok "Compositor Wayland aktif ($WAYLAND_DISPLAY_VALUE)"
-
-          as_runner systemctl --user status org.gnome.Shell@ubuntu.service --no-pager 2>/dev/null || true
-          as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 40 --no-pager 2>/dev/null || true
 
           if systemctl is-active --quiet chrome-remote-desktop@runner; then
             ok "Service chrome-remote-desktop@runner aktif"
           else
-            fail "chrome-remote-desktop@runner tidak aktif"
-            systemctl status chrome-remote-desktop@runner --no-pager || true
-            exit 1
+            verify_fail "chrome-remote-desktop@runner tidak aktif"
           fi
 
           if grep -q -- "--headless" /etc/systemd/user/org.gnome.Shell@.service.d/10-headless-beta.conf 2>/dev/null &&
@@ -1202,81 +1266,51 @@ jobs:
           else
             warn "Override headless / virtual monitor tidak sesuai"
           fi
-          echo "::endgroup::"
 
-          echo "::group::Lock & animasi"
+          # --- Lock & animasi ---
           if [ -f /etc/dconf/db/local.d/99-crd-no-lock ]; then
             ok "Lock / screensaver / suspend dinonaktifkan"
           else
             warn "99-crd-no-lock tidak ditemukan"
           fi
-          ls -l /usr/share/gnome-shell/extensions/force-animations@software-rendering/ || true
-          cat /etc/dconf/db/local.d/98-force-animations || true
-          sudo -u runner dbus-run-session -- gsettings get org.gnome.desktop.interface enable-animations || true
           if sudo -u runner dbus-run-session -- gsettings get org.gnome.shell enabled-extensions 2>/dev/null | grep -q 'force-animations@software-rendering'; then
             ok "force-animations terdaftar (animasi aktif pada software rendering)"
           else
             warn "force-animations TIDAK terdaftar di enabled-extensions"
           fi
-          echo "::endgroup::"
 
-          echo "::group::Tampilan (vanilla Ubuntu · dark mode)"
-          if ls -d /home/runner/.themes/catppuccin* 2>/dev/null || \
-             ls -d /home/runner/.icons/catppuccin* 2>/dev/null; then
-            fail "Masih ada sisa aset Catppuccin"
-            exit 1
+          # --- Tampilan (vanilla Ubuntu · dark mode) ---
+          if ls -d /home/runner/.themes/catppuccin* /home/runner/.icons/catppuccin* > /dev/null 2>&1; then
+            verify_fail "Masih ada sisa aset Catppuccin"
           fi
-          ok "Tidak ada aset tema pihak ketiga"
-
           if [ -n "$(ls -A /home/runner/Desktop 2>/dev/null)" ]; then
-            fail "Desktop tidak kosong"
-            ls -A /home/runner/Desktop || true
-            exit 1
+            verify_fail "Desktop tidak kosong"
           fi
-          ok "Desktop bersih"
 
           COLOR_SCHEME="$(gs_get org.gnome.desktop.interface color-scheme)"
-          if [ "$COLOR_SCHEME" = "prefer-dark" ]; then
-            ok "color-scheme = prefer-dark"
-          else
-            fail "color-scheme bukan prefer-dark (dapat: ${COLOR_SCHEME:-kosong})"
-            exit 1
-          fi
+          [ "$COLOR_SCHEME" = "prefer-dark" ] || verify_fail "color-scheme bukan prefer-dark (dapat: ${COLOR_SCHEME:-kosong})"
           GTK_THEME_VAL="$(gs_get org.gnome.desktop.interface gtk-theme)"
           case "$GTK_THEME_VAL" in
-            *Yaru-dark*) ok "gtk-theme = $GTK_THEME_VAL" ;;
-            *)
-              fail "gtk-theme bukan Yaru-dark (dapat: ${GTK_THEME_VAL:-kosong})"
-              exit 1
-              ;;
+            *Yaru-dark*) ;;
+            *) verify_fail "gtk-theme bukan Yaru-dark (dapat: ${GTK_THEME_VAL:-kosong})" ;;
           esac
 
           # CRD memaksa XDG_CURRENT_DESKTOP=GNOME, jadi override
           # [org.gnome.desktop.background:ubuntu] tidak berlaku; nilai di-set
           # eksplisit oleh dconf 96-crd-ubuntu-look. Bila file gambar tidak
           # ada, shell hanya menggambar primary-color.
-          SHELL_PID="$(pgrep -x gnome-shell | head -n1)"
-          if [ -n "$SHELL_PID" ] && [ -r "/proc/${SHELL_PID}/environ" ]; then
-            LIVE_DESKTOP="$(tr '\0' '\n' < "/proc/${SHELL_PID}/environ" | sed -n 's/^XDG_CURRENT_DESKTOP=//p')"
-            info "XDG_CURRENT_DESKTOP (gnome-shell) = ${LIVE_DESKTOP:-<kosong>} (dipaksa CRD)"
-          fi
-
           EXPECT_LIGHT='file:///usr/share/backgrounds/warty-final-ubuntu.png'
           EXPECT_DARK='file:///usr/share/backgrounds/ubuntu-wallpaper-d.png'
-
           check_wallpaper() {
             local key="$1" want="$2" got path
             got="$(gs_get org.gnome.desktop.background "$key")"
             if [ "$got" != "$want" ]; then
-              fail "$key bukan wallpaper Ubuntu yang diharapkan (diharapkan: $want, dapat: ${got:-kosong})"
-              exit 1
+              verify_fail "$key bukan wallpaper Ubuntu yang diharapkan (diharapkan: $want, dapat: ${got:-kosong})"
             fi
             path="${got#file://}"
             if [ ! -f "$path" ]; then
-              fail "File wallpaper tidak ada: $path (layar hanya akan menampilkan primary-color)"
-              exit 1
+              verify_fail "File wallpaper tidak ada: $path (layar hanya akan menampilkan primary-color)"
             fi
-            ok "$key = $(basename "$path")"
           }
           check_wallpaper picture-uri "$EXPECT_LIGHT"
           check_wallpaper picture-uri-dark "$EXPECT_DARK"
@@ -1285,53 +1319,39 @@ jobs:
             key="${pair%%:*}"
             want="${pair#*:}"
             got="$(gs_get org.gnome.desktop.interface "$key")"
-            if [ "$got" != "$want" ]; then
-              fail "$key bukan default Ubuntu yang diharapkan ($want, dapat: ${got:-kosong})"
-              exit 1
-            fi
-            ok "$key = $got"
+            [ "$got" = "$want" ] || verify_fail "$key bukan default Ubuntu yang diharapkan ($want, dapat: ${got:-kosong})"
           done
-          echo "::endgroup::"
+          ok "Tampilan: Ubuntu default · dark mode (Yaru-dark) · wallpaper · desktop bersih"
 
-          echo "::group::Sistem & aplikasi"
-          uname -a
+          # --- Sistem & aplikasi ---
           if [ "$(cat /etc/timezone 2>/dev/null)" = "Asia/Jakarta" ] && [ "$(date +%z)" = "+0700" ]; then
             ok "Timezone WIB (Asia/Jakarta, +0700)"
           else
             warn "Timezone bukan Asia/Jakarta"
           fi
-          ls -l /usr/local/bin/safe-upgrade || true
-          ok "Chrome: $(google-chrome --version 2>/dev/null || echo 'tidak ditemukan')"
-          ok "VS Code: $(code --version 2>/dev/null | head -n 1 || echo 'tidak ditemukan')"
-          ok "OpenCode CLI: $(opencode --version 2>/dev/null || echo 'tidak ditemukan')"
-          dpkg -l | grep -i opencode || true
-          ok "User: $(id runner)"
-          echo "::endgroup::"
+          command -v safe-upgrade > /dev/null || warn "safe-upgrade tidak ditemukan"
+          ok "Aplikasi: Chrome $(google-chrome --version 2>/dev/null | awk '{print $3}') · VS Code $(code --version 2>/dev/null | head -n 1) · OpenCode $(opencode --version 2>/dev/null)"
 
-          echo "::group::KVM & virtualisasi"
-          ls -l /dev/kvm || true
-          getent group kvm libvirt || true
+          # --- KVM & virtualisasi ---
           if sudo -u runner test -r /dev/kvm && sudo -u runner test -w /dev/kvm; then
             ok "runner dapat mengakses /dev/kvm"
           else
             warn "runner tidak dapat mengakses /dev/kvm (instalasi tetap OK; KVM nonaktif di runner ini)"
           fi
-          command -v qemu-system-x86_64 > /dev/null || warn "qemu-system-x86_64 tidak ditemukan"
-          command -v virsh > /dev/null || warn "virsh tidak ditemukan"
-          command -v virt-manager > /dev/null || warn "virt-manager tidak ditemukan"
-          command -v gnome-boxes > /dev/null || warn "gnome-boxes tidak ditemukan"
-          systemctl is-enabled libvirtd 2>/dev/null || true
-          systemctl is-active libvirtd 2>/dev/null || true
-          echo "::endgroup::"
+          for bin in qemu-system-x86_64 virsh virt-manager gnome-boxes; do
+            command -v "$bin" > /dev/null || warn "$bin tidak ditemukan"
+          done
 
-          echo "::group::Snap"
-          if command -v snap >/dev/null 2>&1; then warn "snap masih terpasang"; else ok "snap / snapd dihapus"; fi
-          if dpkg -l thunderbird 2>/dev/null | grep -q ^ii; then warn "thunderbird (transisi snap) masih terpasang"; else ok "thunderbird (transisi snap) dihapus"; fi
-          if apt-mark showhold | grep -qx snapd; then ok "snapd di-hold"; else warn "snapd tidak di-hold"; fi
-          echo "::endgroup::"
+          # --- Snap ---
+          if command -v snap >/dev/null 2>&1; then warn "snap masih terpasang"; fi
+          if dpkg -l thunderbird 2>/dev/null | grep -q ^ii; then warn "thunderbird (transisi snap) masih terpasang"; fi
+          if apt-mark showhold | grep -qx snapd; then
+            ok "snap / snapd dihapus dan di-hold"
+          else
+            warn "snapd tidak di-hold"
+          fi
 
-          echo ""
-          ok "Verifikasi selesai"
+          step_done
 
 
       # ------------------------------------------------------------------
@@ -1340,9 +1360,9 @@ jobs:
       # Memisahkan "compositor tidak merender" dari "stream CRD/PipeWire mati":
       #   - rekam 4 detik via org.gnome.Shell.Screencast (jalur berbeda dari
       #     stream CRD), simpan PNG + webm sebagai artifact;
-      #   - cetak link PipeWire gnome-shell -> chrome-remote-desktop-host
-      #     beserta format yang diiklankan;
-      #   - cetak error journal shell yang relevan.
+      #   - simpan link PipeWire gnome-shell -> chrome-remote-desktop-host
+      #     beserta format yang diiklankan, dan error journal shell.
+      # Detail hanya dicetak ke log Actions bila ada anomali.
       # ------------------------------------------------------------------
       - name: Capture desktop proof (diagnostik)
         if: always()
@@ -1355,6 +1375,7 @@ jobs:
           WEBM="$OUT_DIR/desktop-proof.webm"
           PNG="$OUT_DIR/desktop-proof.png"
           rm -f "$WEBM" "$PNG"
+          PROOF_OK=1
 
           as_runner() {
             sudo -u runner env \
@@ -1363,10 +1384,11 @@ jobs:
               "$@"
           }
 
-          echo "::group::PipeWire graph (gnome-shell vs host CRD)"
-          as_runner env PIPEWIRE_REMOTE=crd_audio/pipewire pw-link -l || true
-          as_runner env PIPEWIRE_REMOTE=crd_audio/pipewire pw-dump > /tmp/pw-dump.json 2>/dev/null || true
-          python3 - /tmp/pw-dump.json <<'PYPROOF' || true
+          PWLOG="$CI_LOG_DIR/proof-pipewire.log"
+          {
+            as_runner env PIPEWIRE_REMOTE=crd_audio/pipewire pw-link -l || true
+            as_runner env PIPEWIRE_REMOTE=crd_audio/pipewire pw-dump > /tmp/pw-dump.json 2>/dev/null || true
+            python3 - /tmp/pw-dump.json <<'PYPROOF' || true
           import json, sys
           try:
               data = json.load(open(sys.argv[1]))
@@ -1385,9 +1407,8 @@ jobs:
                   keys = ("mediaType", "format", "size", "colorPrimaries", "transferFunction")
                   print("  ", {k: fmt[k] for k in keys if k in fmt})
           PYPROOF
-          echo "::endgroup::"
+          } > "$PWLOG" 2>&1 || true
 
-          info "Merekam 4 detik via org.gnome.Shell.Screencast"
           if as_runner gdbus call --session \
                --dest org.gnome.Shell.Screencast \
                --object-path /org/gnome/Shell/Screencast \
@@ -1398,18 +1419,17 @@ jobs:
               --dest org.gnome.Shell.Screencast \
               --object-path /org/gnome/Shell/Screencast \
               --method org.gnome.Shell.Screencast.StopScreencast > /dev/null 2>&1 || true
-            ok "Rekaman dibuat ($(stat -c%s "$WEBM" 2>/dev/null || echo 0) byte)"
+            ok "Rekaman 4 detik dibuat ($(stat -c%s "$WEBM" 2>/dev/null || echo 0) byte)"
           else
             echo "::warning::Screencast D-Bus gagal: $(tail -n1 /tmp/screencast.out 2>/dev/null)"
+            PROOF_OK=0
           fi
 
           if [ -s "$WEBM" ]; then
             gst-launch-1.0 -q filesrc location="$WEBM" ! decodebin ! videoconvert ! pngenc ! filesink location="$PNG" > /tmp/gst.out 2>&1 || true
           fi
 
-          if [ -f "$PNG" ]; then
-            ok "Frame tersimpan: $(basename "$PNG") ($(stat -c%s "$PNG") byte)"
-            python3 - "$PNG" <<'PYPROOF' || true
+          cat > /tmp/brightness.py <<'PYBR'
           import sys
           try:
               from gi.repository import GdkPixbuf
@@ -1432,12 +1452,23 @@ jobs:
                   count += 1
                   peak = max(peak, r, g, b)
           avg = total / (count * 3) if count else 0
-          print(f"frame={width}x{height} average_brightness={avg:.1f} peak={peak}")
-          if avg < 5:
-              print("::warning::Frame hampir hitam - compositor tidak merender atau pemandangan memang gelap.")
-          PYPROOF
+          print(f"{width}x{height}, brightness rata-rata {avg:.1f}, puncak {peak}")
+          sys.exit(3 if avg < 5 else 0)
+          PYBR
+
+          if [ -f "$PNG" ]; then
+            BR_RC=0
+            BRIGHT="$(python3 /tmp/brightness.py "$PNG" 2>&1)" || BR_RC=$?
+            if [ "$BR_RC" -eq 3 ]; then
+              warn "Frame hampir hitam: $BRIGHT"
+              echo "::warning::Frame hampir hitam - compositor tidak merender atau pemandangan memang gelap."
+              PROOF_OK=0
+            else
+              ok "Frame desktop: $BRIGHT"
+            fi
           else
             echo "::warning::Tidak ada frame yang berhasil diekstrak (compositor/PipeWire bermasalah)."
+            PROOF_OK=0
           fi
 
           CRASH_DIR="/run/user/$RUNNER_UID/crd_crashpad/completed"
@@ -1445,12 +1476,23 @@ jobs:
             mkdir -p "$OUT_DIR/crash-dumps"
             find "$CRASH_DIR" -maxdepth 1 -name '*.dmp' -exec cp {} "$OUT_DIR/crash-dumps/" \; 2>/dev/null || true
             warn "Crash dump disalin: $(find "$OUT_DIR/crash-dumps" -name '*.dmp' | wc -l) file"
+            PROOF_OK=0
           fi
 
-          echo "::group::Journal shell (error / screencast / pipewire)"
+          JLOG="$CI_LOG_DIR/proof-shell-journal.log"
           as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 200 --no-pager 2>/dev/null \
-            | grep -iE "pipewire|screencast|error|crash" | tail -n 15 || true
-          echo "::endgroup::"
+            | grep -iE "pipewire|screencast|error|crash" | tail -n 15 > "$JLOG" || true
+
+          # Detail hanya dicetak bila ada anomali.
+          if [ "$PROOF_OK" -ne 1 ]; then
+            echo "::group::PipeWire graph (gnome-shell vs host CRD)"
+            cat "$PWLOG" || true
+            echo "::endgroup::"
+            echo "::group::Journal shell (error / screencast / pipewire)"
+            cat "$JLOG" || true
+            echo "::endgroup::"
+          fi
+          step_done
 
       - name: Upload desktop proof (artifact)
         if: always()
@@ -1467,10 +1509,76 @@ jobs:
 
 
       # ------------------------------------------------------------------
+      # JOB SUMMARY · tabel status + durasi per step, info akses, versi.
+      # Ditulis sebelum Keep Alive agar langsung terlihat di tab Summary.
+      # ------------------------------------------------------------------
+      - name: Publish job summary
+        if: always()
+        run: |
+          export GNOME_V="$(gnome-shell --version 2>/dev/null || true)"
+          export CHROME_V="$(google-chrome --version 2>/dev/null || true)"
+          export CODE_V="$(code --version 2>/dev/null | head -n 1 || true)"
+          export OC_V="$(opencode --version 2>/dev/null || true)"
+          export CRD_V="$(dpkg-query -W -f='${Version}' chrome-remote-desktop 2>/dev/null || true)"
+          python3 - <<'PYSUM'
+          import os, time
+
+          steps, order = {}, []
+          try:
+              for line in open('/tmp/ci-steps.tsv'):
+                  p = line.rstrip('\n').split('\t')
+                  if p[0] == 'S' and len(p) >= 4:
+                      steps[p[1]] = {'title': p[2], 'dur': None}
+                      order.append(p[1])
+                  elif p[0] == 'D' and len(p) >= 3 and p[1] in steps:
+                      steps[p[1]]['dur'] = int(p[2])
+          except FileNotFoundError:
+              pass
+
+          def fmt(s):
+              s = int(s)
+              return f"{s // 60}m{s % 60:02d}s" if s >= 60 else f"{s}s"
+
+          failed = [i for i in order if steps[i]['dur'] is None]
+          start = os.environ.get('JOB_START_EPOCH', '')
+          total = fmt(time.time() - int(start)) if start.isdigit() else '-'
+
+          out = ['## 🖥️ GNOME 26 + Chrome Remote Desktop (Wayland BETA)', '']
+          if failed:
+              out.append(f"❌ **Gagal / terhenti** di step `{failed[0]}` · {steps[failed[0]]['title']}. "
+                         "Log lengkap tersedia di artifact `install-logs-<run id>`.")
+          else:
+              out.append(f"✅ **Siap digunakan** · total {total}")
+          out += ['', '| Step | Status | Durasi |', '|---|:---:|---:|']
+          for i in order:
+              s = steps[i]
+              done = s['dur'] is not None
+              out.append(f"| {i} · {s['title']} | {'✅' if done else '❌'} | {fmt(s['dur']) if done else '-'} |")
+
+          if not failed:
+              pin = ('secret `CRD_PIN`' if os.environ.get('CRD_PIN_SOURCE') == 'secret'
+                     else 'default `123456` (belum ada secret `CRD_PIN`)')
+              out += ['', '### Akses', '',
+                      '- URL: https://remotedesktop.google.com/access',
+                      '- Perangkat: `gnome` · Pengguna: `runner`',
+                      f'- PIN: {pin}']
+              vers = [('GNOME Shell', 'GNOME_V'), ('Chrome', 'CHROME_V'), ('VS Code', 'CODE_V'),
+                      ('OpenCode', 'OC_V'), ('Chrome Remote Desktop', 'CRD_V')]
+              out += ['', '### Versi terpasang', '', '| Komponen | Versi |', '|---|---|']
+              for name, key in vers:
+                  out.append(f"| {name} | {os.environ.get(key) or '-'} |")
+
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as fh:
+              fh.write('\n'.join(out) + '\n')
+          PYSUM
+
+
+      # ------------------------------------------------------------------
       # KEEP ALIVE · monitor sesi + diagnostik Wayland
       #
-      #   1. Heartbeat tiap 5 menit: status host CRD, PID + status gnome-shell
+      #   1. Pemeriksaan tiap 5 menit: status host CRD, PID + status gnome-shell
       #      (compositor headless), portal, dan error journal yang relevan.
+      #      Heartbeat dicetak tiap 30 menit, atau segera bila ada insiden.
       #   2. Deteksi insiden: PID gnome-shell berubah (crash + respawn),
       #      service tidak aktif, dump crash host baru, serta gnome-shell/Xvfb
       #      di luar unit systemd (indikasi CRD memulai sesi X sendiri).
@@ -1493,13 +1601,16 @@ jobs:
           JOB_START="${JOB_START_EPOCH:-$(date +%s)}"
           JOB_LIMIT=$(( 360 * 60 ))   # samakan dengan timeout-minutes
           GRACE=60                    # ruang untuk cleanup job
-          INTERVAL=300                # heartbeat + health check
+          INTERVAL=300                # pemeriksaan kesehatan tiap 5 menit
+          HEARTBEAT_EVERY=6           # heartbeat tiap 6 siklus (30 menit)
           RESTART_MIN_GAP=120         # jeda minimum antar restart host
           HOST_RESTARTS=0
           SHELL_MISS=0
+          CYCLE=0
           LAST_HOST_RESTART=0
           LAST_SHELL_PID=""
           LAST_EXTRA_PIDS=""
+          XVFB_REPORTED=0
           CRASH_DIR="/run/user/$RUNNER_UID/crd_crashpad/completed"
           LAST_CRASH_COUNT="$(find "$CRASH_DIR" -maxdepth 1 -name '*.dmp' 2>/dev/null | wc -l | tr -d ' ')"
 
@@ -1524,7 +1635,7 @@ jobs:
           ok "Chrome Remote Desktop berjalan (Wayland BETA)"
           kv "Akses" "https://remotedesktop.google.com/access"
           kv "Pengguna" "runner"
-          kv "Monitor" "tiap $(( INTERVAL / 60 )) menit, sampai batas job 360 menit"
+          kv "Monitor" "cek tiap $(( INTERVAL / 60 )) menit · heartbeat tiap $(( INTERVAL * HEARTBEAT_EVERY / 60 )) menit"
           warn "Jangan batalkan workflow selama sesi digunakan"
 
           # Konfigurasi host CRD (nama file memakai hash: host#<hash>.json).
@@ -1545,6 +1656,7 @@ jobs:
             NOW=$(date +%s)
             ELAPSED=$(( NOW - JOB_START ))
             REMAIN=$(( JOB_LIMIT - GRACE - ELAPSED ))
+            INCIDENT=0
 
             if [ "$REMAIN" -le 0 ]; then
               info "Batas job tercapai (elapsed $(( ELAPSED / 60 )) menit) · monitor berakhir"
@@ -1563,6 +1675,7 @@ jobs:
 
             # ---- 2. gnome-shell PID berubah (crash + respawn) ----
             if [ -n "$LAST_SHELL_PID" ] && [ -n "$SHELL_PID" ] && [ "$SHELL_PID" != "$LAST_SHELL_PID" ]; then
+              INCIDENT=1
               echo "::warning::GNOME Shell restart di tengah sesi (PID ${LAST_SHELL_PID} -> ${SHELL_PID}); gejala layar hitam + kursor."
               warn "gnome-shell PID berubah: ${LAST_SHELL_PID} → ${SHELL_PID}"
               echo "::group::Insiden · journal org.gnome.Shell@ubuntu.service (60 baris terakhir)"
@@ -1578,6 +1691,7 @@ jobs:
             HOST_RESTARTED=""
             CRASH_COUNT="$(find "$CRASH_DIR" -maxdepth 1 -name '*.dmp' 2>/dev/null | wc -l | tr -d ' ')"
             if [ "${CRASH_COUNT:-0}" -gt "${LAST_CRASH_COUNT:-0}" ]; then
+              INCIDENT=1
               echo "::warning::Crash host CRD terdeteksi (dump ${LAST_CRASH_COUNT} -> ${CRASH_COUNT})."
               warn "Host CRD crash · client dapat melihat layar hitam"
               ls -lt "$CRASH_DIR" 2>/dev/null | head -n 5 || true
@@ -1597,6 +1711,7 @@ jobs:
             LAST_CRASH_COUNT="$CRASH_COUNT"
 
             if [ "$SHELL_STATE" != "active" ]; then
+              INCIDENT=1
               SHELL_MISS=$(( SHELL_MISS + 1 ))
               warn "org.gnome.Shell@ubuntu.service tidak aktif (${SHELL_MISS}x berturut-turut) · capture akan hitam"
               if [ "$SHELL_MISS" -le 1 ]; then
@@ -1611,6 +1726,7 @@ jobs:
 
             # ---- 3. Auto-restart HANYA host CRD (bukan shell) ----
             if [ "$HOST_STATE" != "active" ]; then
+              INCIDENT=1
               warn "chrome-remote-desktop@runner tidak aktif"
               if [ $(( NOW - LAST_HOST_RESTART )) -ge "$RESTART_MIN_GAP" ]; then
                 HOST_RESTARTS=$(( HOST_RESTARTS + 1 ))
@@ -1630,16 +1746,19 @@ jobs:
               HOST_NOW="active${HOST_RESTARTED:+ (baru di-restart)}"
             else
               HOST_NOW="inactive"
+              INCIDENT=1
               warn "Host CRD masih tidak aktif · coba lagi pada siklus berikutnya"
             fi
 
             # ---- 4b. gnome-shell / X di LUAR unit systemd ----
             # Indikasi daemon CRD memulai sesi X sendiri (anak proses CRD);
-            # parentage dibongkar agar sumbernya terlihat.
+            # parentage dibongkar agar sumbernya terlihat. Dilaporkan hanya
+            # saat daftar PID berubah.
             collect_extra_processes "$SHELL_PID"
             if [ "$EXTRA_COUNT" -gt 0 ]; then
-              warn "gnome-shell ${EXTRA_COUNT}x di luar unit systemd (unit=$SHELL_PID):${EXTRA_PIDS:-}"
               if [ "$EXTRA_PIDS " != "$LAST_EXTRA_PIDS " ]; then
+                INCIDENT=1
+                warn "gnome-shell ${EXTRA_COUNT}x di luar unit systemd (unit=$SHELL_PID):${EXTRA_PIDS:-}"
                 echo "::group::Insiden · gnome-shell ekstra (parentage + args)"
                 for p in $EXTRA_PIDS; do
                   PPID_X="$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')"
@@ -1656,7 +1775,9 @@ jobs:
             else
               LAST_EXTRA_PIDS=""
             fi
-            if [ -n "$X_PROCS" ]; then
+            if [ -n "$X_PROCS" ] && [ "$XVFB_REPORTED" -eq 0 ]; then
+              INCIDENT=1
+              XVFB_REPORTED=1
               warn "Xvfb aktif (sesi X legacy, bukan Wayland headless):"
               printf '%s\n' "$X_PROCS" | sed 's/^/      /'
             fi
@@ -1664,6 +1785,7 @@ jobs:
             # ---- 5. Journal error ringkas ----
             JOURNAL_ERRORS="$(as_runner journalctl --user -u org.gnome.Shell@ubuntu.service -n 200 --no-pager --since "-$(( INTERVAL / 60 ))min" 2>/dev/null | grep -iE "error|segfault|crash|abort|screencast" | tail -n 5 || true)"
             if [ -n "$JOURNAL_ERRORS" ]; then
+              INCIDENT=1
               warn "Journal shell ($(( INTERVAL / 60 )) menit terakhir):"
               printf '%s\n' "$JOURNAL_ERRORS" | sed 's/^/      /'
             fi
@@ -1671,15 +1793,19 @@ jobs:
             # ---- 5b. Journal host CRD (system journal) ----
             CRD_JOURNAL="$(sudo journalctl -u chrome-remote-desktop@runner -n 60 --no-pager --since "-$(( INTERVAL / 60 ))min" 2>/dev/null | grep -iE 'session|wayland|display|x11|xvfb|fail|error' | tail -n 8 || true)"
             if [ -n "$CRD_JOURNAL" ]; then
+              INCIDENT=1
               warn "Journal host CRD ($(( INTERVAL / 60 )) menit terakhir):"
               printf '%s\n' "$CRD_JOURNAL" | sed 's/^/      /'
             fi
 
-            # ---- 6. Heartbeat ----
-            printf '  %s%s%s  up %sm · sisa ~%sm · host %s · shell %s (pid %s) · portal %s · extra-shell %sx · restart %sx\n' \
-              "$C_D" "$(date +%H:%M)" "$C_N" \
-              "$(( ELAPSED / 60 ))" "$(( REMAIN / 60 ))" "$HOST_NOW" \
-              "$SHELL_STATE" "${SHELL_PID:-?}" "$PORTAL_STATE" "$EXTRA_COUNT" "$HOST_RESTARTS"
+            # ---- 6. Heartbeat: tiap 30 menit, atau segera saat ada insiden ----
+            if [ "$INCIDENT" -eq 1 ] || [ $(( CYCLE % HEARTBEAT_EVERY )) -eq 0 ]; then
+              printf '  %s%s%s  up %sm · sisa ~%sm · host %s · shell %s (pid %s) · portal %s · extra-shell %sx · restart %sx\n' \
+                "$C_D" "$(date +%H:%M)" "$C_N" \
+                "$(( ELAPSED / 60 ))" "$(( REMAIN / 60 ))" "$HOST_NOW" \
+                "$SHELL_STATE" "${SHELL_PID:-?}" "$PORTAL_STATE" "$EXTRA_COUNT" "$HOST_RESTARTS"
+            fi
+            CYCLE=$(( CYCLE + 1 ))
 
             # ---- 7. Tidur satu interval (tidak melebihi sisa waktu) ----
             SLEEP_NOW="$INTERVAL"
@@ -1693,3 +1819,16 @@ jobs:
           ok "Sesi CRD dijaga sampai akhir batas job"
           kv "Restart host" "${HOST_RESTARTS}x"
           kv "Akses" "https://remotedesktop.google.com/access (user: runner)"
+
+      # Log lengkap proses install/konfigurasi; hanya diunggah bila job gagal.
+      # Diletakkan paling akhir agar juga menangkap kegagalan di step mana pun
+      # (step setelah yang gagal dilewati, kecuali yang `if: always()`).
+      - name: Upload install logs (on failure)
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-logs-${{ github.run_id }}
+          path: /tmp/ci-logs/
+          if-no-files-found: ignore
+          retention-days: 3
