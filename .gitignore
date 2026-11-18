@@ -13,3 +13,6 @@ tmp/
 # Python
 __pycache__/
 *.pyc
+
+# Prompt lokal (tidak ikut repo)
+prompt.md
