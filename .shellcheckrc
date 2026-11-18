@@ -1,0 +1,12 @@
+# Konfigurasi ShellCheck untuk seluruh skrip repo.
+#
+# Temuan berikut memang disengaja (sama dengan ignore di actionlint):
+#   SC2016 - string literal yang memang berisi `$` / backtick
+#   SC2034 - variabel warna/path tidak selalu dipakai di setiap skrip
+#   SC2012 - `ls` pada step verifikasi, hanya untuk menampilkan info
+disable=SC2016,SC2034,SC2012
+
+# Ikuti file yang di-source (scripts/*/lib/*.sh) saat analisis.
+external-sources=true
+
+source-path=SCRIPTDIR

@@ -62,5 +62,13 @@ jobs:
       - name: yamllint
         run: yamllint -f parsable .
 
+      - name: bash syntax
+        run: |
+          while IFS= read -r -d '' f; do
+            bash -n "$f"
+          done < <(find scripts assets -name '*.sh' -print0)
+
       - name: shellcheck
-        run: shellcheck scripts/*.sh
+        run: |
+          mapfile -d '' files < <(find scripts assets -name '*.sh' -print0)
+          shellcheck -x "${files[@]}"
