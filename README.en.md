@@ -346,8 +346,16 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 │   ├── ISSUE_TEMPLATE/
 │   └── dependabot.yml
 ├── scripts/
+│   ├── gnome24/                 # one script per GNOME 24.04 workflow step
+│   ├── cinnamon/                # one script per Cinnamon 26 workflow step
+│   ├── wayland/                 # one script per GNOME 26 Wayland workflow step
+│   │   └── lib/logging.sh       # logging helper for every Wayland step
 │   ├── crd-web-auth.py          # auth form server (token + status)
 │   └── safe-upgrade.sh          # session-safe upgrade helper
+├── assets/
+│   ├── gnome24/                 # apt pins, dconf, .desktop, session, extension
+│   ├── cinnamon/                # apt pins, dconf, .desktop, session, autostart
+│   └── wayland/                 # apt pins, dconf, systemd units, extension
 ├── docs/
 │   ├── images/banner.svg
 │   ├── images/archdityaa.png
@@ -366,6 +374,12 @@ How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.m
 └── LICENSE
 ```
 
+Every substantive workflow `run:` block simply calls one script under `scripts/<workflow>/`
+(strict 1:1 extraction, no shared step scripts across variants). Static content
+such as apt pins, dconf, `.desktop` files, session templates, systemd units and
+the GNOME Shell extension lives in `assets/<workflow>/`, keeping the YAML short
+and readable.
+
 ---
 
 ## Contributing
@@ -379,8 +393,10 @@ Run the same linters locally before pushing:
 ```bash
 pip install yamllint
 yamllint .
-shellcheck scripts/*.sh
-python3 -m py_compile scripts/crd-web-auth.py
+# shellcheck reads the repo rules from .shellcheckrc (SC2016/SC2034/SC2012
+# are intentional); -x follows sourced files.
+find scripts assets -name '*.sh' -print0 | xargs -0 shellcheck -x
+python3 -m py_compile scripts/crd-web-auth.py scripts/wayland/*.py
 # actionlint: https://github.com/rhysd/actionlint
 actionlint -ignore SC2016 -ignore SC2034 -ignore SC2012 \
   -ignore 'label "ubuntu-26.04" is unknown'

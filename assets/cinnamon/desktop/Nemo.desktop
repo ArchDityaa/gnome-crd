@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Files
+Comment=Browse the filesystem with Nemo
+Exec=nemo
+Icon=system-file-manager
+Terminal=false

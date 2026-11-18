@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Safe Upgrade
+Comment=Gunakan ini pengganti apt upgrade (anti putus CRD)
+Exec=gnome-terminal -- bash -c "safe-upgrade; echo; read -n1 -p \"Tekan tombol untuk tutup...\""
+Icon=system-software-update
+Terminal=false

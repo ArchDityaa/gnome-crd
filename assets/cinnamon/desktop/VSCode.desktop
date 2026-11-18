@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Visual Studio Code
+Comment=Visual Studio Code
+Exec=code
+Icon=code
+Terminal=false

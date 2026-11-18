@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Set Wallpaper
+Exec=sh -c "sleep 3; gsettings set org.gnome.desktop.background picture-uri file:///home/runner/Pictures/wallpaper.png; gsettings set org.gnome.desktop.background picture-uri-dark file:///home/runner/Pictures/wallpaper.png; gsettings set org.gnome.desktop.background picture-options zoom"
+X-GNOME-Autostart-enabled=true
+Terminal=false
