@@ -7,6 +7,9 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Added
 
+- Wiki pengembangan (`Home`, `Development`, `Architecture`, `Roadmap`,
+  `Decisions`) sebagai pintu masuk dokumentasi; tautannya ditambahkan ke README
+  ID & EN. Detail teknis tetap di `docs/` agar ikut review dan CI.
 - `scripts/gnome24/`, `scripts/cinnamon/`, `scripts/wayland/` — satu skrip per
   step workflow (ekstraksi 1:1, `set -euo pipefail`), plus helper
   `scripts/wayland/lib/logging.sh`, `gnome-session-wrapper.sh`, dan tiga skrip

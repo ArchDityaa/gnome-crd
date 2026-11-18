@@ -336,7 +336,8 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 Panduan lengkap: [`docs/troubleshooting.md`](docs/troubleshooting.md) ·
 Pertanyaan umum: [`docs/faq.md`](docs/faq.md) ·
 Dokumentasi Wayland: [`docs/wayland-crd.md`](docs/wayland-crd.md) ·
-Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots.md)
+Cara menambah screenshot: [`docs/adding-screenshots.md`](docs/adding-screenshots.md) ·
+Panduan pengembangan: [**Wiki**](https://github.com/ArchDityaa/gnome-crd/wiki)
 
 ---
 

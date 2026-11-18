@@ -329,7 +329,8 @@ open <https://remotedesktop.google.com/access>, pick the device named **gnome**
 Full guide: [`docs/troubleshooting.md`](docs/troubleshooting.md) ·
 FAQ: [`docs/faq.md`](docs/faq.md) ·
 Wayland documentation: [`docs/wayland-crd.md`](docs/wayland-crd.md) ·
-How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.md)
+How to add screenshots: [`docs/adding-screenshots.md`](docs/adding-screenshots.md) ·
+Development guide: [**Wiki**](https://github.com/ArchDityaa/gnome-crd/wiki)
 
 ---
 
