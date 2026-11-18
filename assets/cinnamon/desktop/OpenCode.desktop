@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenCode
+Comment=OpenCode Desktop
+Exec=opencode-desktop
+Icon=opencode-desktop
+Terminal=false

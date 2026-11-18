@@ -1,0 +1,9 @@
+[org/cinnamon/desktop/session]
+idle-delay=uint32 0
+[org/cinnamon/desktop/screensaver]
+lock-enabled=false
+idle-activation-enabled=false
+lock-delay=uint32 0
+[org/cinnamon/settings-daemon/plugins/power]
+sleep-inactive-ac-type='nothing'
+sleep-inactive-battery-type='nothing'

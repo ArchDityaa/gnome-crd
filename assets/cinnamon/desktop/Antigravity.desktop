@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Google Antigravity
+Comment=Open Google Antigravity
+Exec=google-chrome --app=https://antigravity.google/ --no-sandbox
+Icon=google-chrome
+Terminal=false

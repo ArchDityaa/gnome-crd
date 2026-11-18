@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Set Resolution
+Exec=/usr/local/bin/set-resolution.sh
+X-GNOME-Autostart-enabled=true
+X-Cinnamon-Autostart-enabled=true
+Terminal=false

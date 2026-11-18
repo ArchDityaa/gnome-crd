@@ -1,0 +1,44 @@
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export NEEDRESTART_MODE=l
+export XDG_SESSION_TYPE=x11
+export XDG_CURRENT_DESKTOP=X-Cinnamon
+export XDG_SESSION_DESKTOP=cinnamon
+export DESKTOP_SESSION=cinnamon
+export XDG_RUNTIME_DIR=/run/user/@RUNNER_UID@
+export LIBGL_ALWAYS_SOFTWARE=1
+export GDK_BACKEND=x11
+export NO_AT_BRIDGE=1
+
+# Cinnamon memakai Muffin (fork Mutter). Muffin 6.4 tidak mengenal
+# MUTTER_DEBUG_FORCE_SOFTWARE_RENDER, jadi software rendering
+# dipaksa lewat Mesa: LIBGL_ALWAYS_SOFTWARE=1 + libgl1-mesa-dri.
+
+# Matikan DPMS + screensaver X11 (lapisan kedua setelah dconf).
+xset s off -dpms s noblank 2>/dev/null || true
+
+# Auto-detect display dan set 1024x768.
+# CRD selalu start Xorg di display >= 20 dan sudah export DISPLAY +
+# XAUTHORITY ke session. Retry loop karena Xorg bisa belum siap.
+DISP=""
+OUTPUT=""
+for try in 1 2 3 4 5 6 7 8 9 10; do
+  for D in "$DISPLAY" :20 :21 :22 :0; do
+    OUT=$(xrandr --display "$D" 2>/dev/null | grep " connected" | awk '{print $1}' | head -n1)
+    if [ -n "$OUT" ]; then
+      DISP="$D"; OUTPUT="$OUT"; break 2
+    fi
+  done
+  sleep 1
+done
+if [ -n "$OUTPUT" ] && [ -n "$DISP" ]; then
+  MODE=$(xrandr --display "$DISP" 2>/dev/null | grep -oE "1024x768(_[0-9.]+)?" | head -n1)
+  if [ -n "$MODE" ]; then
+    xrandr --display "$DISP" --output "$OUTPUT" --mode "$MODE" 2>/dev/null || true
+  else
+    xrandr --display "$DISP" --output "$OUTPUT" --auto 2>/dev/null || true
+  fi
+fi
+
+# Fallback diagnosis layar hitam: ganti baris di bawah dengan
+#   exec /usr/bin/cinnamon-session --session cinnamon2d
+exec /usr/bin/cinnamon-session --session cinnamon

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Set Wallpaper
+Exec=sh -c "sleep 3; gsettings set org.cinnamon.desktop.background picture-uri file:///home/runner/Pictures/wallpaper.png; gsettings set org.cinnamon.desktop.background picture-options zoom"
+X-GNOME-Autostart-enabled=true
+X-Cinnamon-Autostart-enabled=true
+Terminal=false

@@ -1,0 +1,3 @@
+Package: snapd thunderbird firefox
+Pin: version *
+Pin-Priority: -10
