@@ -213,6 +213,39 @@ Kalau `/dev/kvm` tidak ada, runner tersebut tidak menyediakan nested
 virtualization (jarang terjadi di x86). VM masih bisa jalan, tapi memakai
 emulasi software (jauh lebih lambat).
 
+**GNOME Boxes: "No KVM!" saat membuat VM (Ubuntu 26.04):**
+
+Ubuntu 26.04 mem-patch libvirt agar URI default-nya `qemu:///system`
+(LP #2027838). GNOME Boxes memanggil `virsh capabilities` **tanpa** `-c`,
+jadi bila `runner` belum bisa membuka `/var/run/libvirt/libvirt-sock`
+(mis. sesi desktop masih memakai grup `libvirt` lama), Boxes menyimpulkan
+KVM tidak tersedia lalu menampilkan **"No KVM!"** — padahal `/dev/kvm` sehat
+dan QEMU bisa memakai akselerasi hardware.
+
+Workflow sudah menulis override per-user `/home/runner/.config/libvirt/libvirt.conf`:
+
+```ini
+uri_default = "qemu:///session"
+```
+
+Verifikasi dari terminal desktop:
+
+```bash
+virsh capabilities | grep "domain type='kvm'"
+gnome-boxes --checks | grep "Libvirt KVM guest available"
+# -> • Libvirt KVM guest available: yes
+```
+
+Perbaikan manual (untuk image/run lama yang belum memuat perubahan ini):
+
+```bash
+mkdir -p ~/.config/libvirt
+echo 'uri_default = "qemu:///session"' >> ~/.config/libvirt/libvirt.conf
+```
+
+`virt-manager` dan akses admin ke koneksi system tetap bisa memakai
+`virsh -c qemu:///system`.
+
 ---
 
 ## 10. Tema / ikon tidak berubah
