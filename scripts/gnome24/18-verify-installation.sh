@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 
-C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_NC='\033[0m'
+C_CYAN='\033[1;36m'; C_GREEN='\033[1;32m'; C_YELLOW='\033[1;33m'; C_NC='\033[0m'
 
 echo ""
 echo "------------------------------------------------------------"
@@ -107,6 +107,25 @@ command -v qemu-system-x86_64 || echo "[WARN] qemu-system-x86_64 missing"
 command -v virsh || echo "[WARN] virsh missing"
 command -v virt-manager || echo "[WARN] virt-manager missing"
 command -v gnome-boxes || echo "[WARN] gnome-boxes missing"
+
+# Default URI libvirt: Boxes menjalankan `virsh capabilities` TANPA `-c`.
+# Ubuntu 26.04 mem-patch default ke qemu:///system (LP: #2027838); override
+# per-user (~/.config/libvirt/libvirt.conf) harus membuatnya kembali ke sesi.
+if sudo -u runner env HOME=/home/runner XDG_RUNTIME_DIR="/run/user/$(id -u runner)" \
+     virsh capabilities 2>/dev/null | grep -q "domain type='kvm'"; then
+  echo -e "${C_GREEN}[OK] libvirt default URI: KVM guest tersedia.${C_NC}"
+else
+  echo -e "${C_YELLOW}[WARN] virsh capabilities tidak menemukan KVM guest (cek uri_default).${C_NC}"
+fi
+if command -v gnome-boxes > /dev/null 2>&1; then
+  if sudo -u runner env HOME=/home/runner XDG_RUNTIME_DIR="/run/user/$(id -u runner)" \
+       timeout 90 gnome-boxes --checks 2>/dev/null | grep -q "Libvirt KVM guest available: yes"; then
+    echo -e "${C_GREEN}[OK] GNOME Boxes: Libvirt KVM guest available.${C_NC}"
+  else
+    echo -e "${C_YELLOW}[WARN] GNOME Boxes --checks: Libvirt KVM guest tidak tersedia.${C_NC}"
+  fi
+fi
+
 systemctl is-enabled libvirtd 2>/dev/null || true
 systemctl is-active libvirtd 2>/dev/null || true
 echo "::endgroup::"

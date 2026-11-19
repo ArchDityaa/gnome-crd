@@ -142,6 +142,22 @@ for bin in qemu-system-x86_64 virsh virt-manager gnome-boxes; do
   command -v "$bin" > /dev/null || warn "$bin tidak ditemukan"
 done
 
+# Default URI libvirt: Boxes menjalankan `virsh capabilities` TANPA `-c`.
+# Ubuntu 26.04 mem-patch default ke qemu:///system (LP: #2027838); override
+# per-user (~/.config/libvirt/libvirt.conf) harus membuatnya kembali ke sesi.
+if as_runner virsh capabilities 2>/dev/null | grep -q "domain type='kvm'"; then
+  ok "libvirt default URI: KVM guest tersedia"
+else
+  warn "virsh capabilities tidak menemukan KVM guest (cek uri_default)"
+fi
+if command -v gnome-boxes > /dev/null 2>&1; then
+  if as_runner timeout 90 gnome-boxes --checks 2>/dev/null | grep -q "Libvirt KVM guest available: yes"; then
+    ok "GNOME Boxes: Libvirt KVM guest available"
+  else
+    warn "GNOME Boxes --checks: Libvirt KVM guest tidak tersedia"
+  fi
+fi
+
 # --- Snap ---
 if command -v snap >/dev/null 2>&1; then warn "snap masih terpasang"; fi
 if dpkg -l thunderbird 2>/dev/null | grep -q ^ii; then warn "thunderbird (transisi snap) masih terpasang"; fi

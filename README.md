@@ -329,6 +329,7 @@ buka <https://remotedesktop.google.com/access>, pilih device bernama **gnome**
 | Sesi terputus saat update paket | Anda memakai `apt upgrade` polos. Pakai `sudo safe-upgrade`. |
 | Resolusi aneh / layar kecil | Varian X11 dikunci ke `1024x768` (mode native driver `dummy`); Wayland BETA memakai virtual monitor `1920x1080`. Ubah lewat *Settings → Displays* bila perlu. |
 | `virt-manager`: "Permission denied" pada libvirt | Log-out lalu log-in ulang di sesi desktop, atau jalankan VM lewat GNOME Boxes (varian GNOME). |
+| GNOME Boxes: **"No KVM!"** saat membuat VM | Ubuntu 26.04 mem-patch default URI libvirt ke `qemu:///system` (LP #2027838), sedangkan Boxes memanggil `virsh capabilities` tanpa `-c`. Workflow menulis `~/.config/libvirt/libvirt.conf` (`uri_default = "qemu:///session"`); lihat [troubleshooting #9](docs/troubleshooting.md#9-virt-manager--gnome-boxes-bermasalah). |
 | Cinnamon: layar hitam setelah connect | Coba fallback `cinnamon2d`: ubah baris `exec` di `~/.chrome-remote-desktop-session` menjadi `exec /usr/bin/cinnamon-session --session cinnamon2d`, lalu restart `chrome-remote-desktop@runner`. |
 | Cinnamon: animasi tidak jalan | Normal pada sesi CRD: Cinnamon 6.4 mematikan efek saat mendeteksi software rendering (llvmpipe). Tidak ada override seperti `force_animations` di GNOME Shell. |
 | `Cannot access KVM` | KVM tersedia di runner x86. Cek `ls -l /dev/kvm`; jika ada tapi tetap gagal, tulis issue dengan log run. |

@@ -48,6 +48,25 @@ else
   echo -e "${C_YELLOW}[WARN] /dev/kvm belum bisa diakses runner (butuh re-login).${C_NC}"
 fi
 
+# Default URI libvirt = qemu:///session untuk user runner.
+# Ubuntu 26.04 mem-patch libvirt agar default-nya qemu:///system
+# (LP: #2027838). GNOME Boxes memanggil `virsh capabilities` TANPA `-c`,
+# jadi bila runner belum punya akses ke socket libvirt system (grup
+# 'libvirt' baru ditambahkan / sesi belum login ulang), Boxes salah
+# menyimpulkan "No KVM!" dan membatalkan pembuatan VM. Config per-user
+# ini membuat default selalu sesi, sama dengan koneksi yang dipakai Boxes
+# (qemu+unix:///session). Idempoten bila file sudah ada.
+LIBVIRT_CONF=/home/runner/.config/libvirt/libvirt.conf
+sudo install -d -o runner -g runner -m 0700 /home/runner/.config/libvirt
+if sudo grep -qE '^[[:space:]]*uri_default[[:space:]]*=' "$LIBVIRT_CONF" 2>/dev/null; then
+  sudo sed -i 's|^[[:space:]]*uri_default[[:space:]]*=.*|uri_default = "qemu:///session"|' "$LIBVIRT_CONF"
+else
+  echo 'uri_default = "qemu:///session"' | sudo tee -a "$LIBVIRT_CONF" > /dev/null
+fi
+sudo chown runner:runner "$LIBVIRT_CONF"
+sudo chmod 0644 "$LIBVIRT_CONF"
+echo -e "${C_GREEN}[OK] Default URI libvirt = qemu:///session (GNOME Boxes).${C_NC}"
+
 echo -e "${C_YELLOW}[INFO] Setting NEEDRESTART_MODE=l for runner (prevents service restart during apt)...${C_NC}"
 echo 'export NEEDRESTART_MODE=l' | sudo tee -a /home/runner/.bashrc > /dev/null
 echo 'export NEEDRESTART_SUSPEND=1' | sudo tee -a /home/runner/.bashrc > /dev/null

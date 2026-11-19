@@ -153,6 +153,14 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/).
 
 ### Fixed
 
+- **GNOME Boxes menampilkan "No KVM!" di Ubuntu 26.04.** Ubuntu 26.04
+  mem-patch libvirt agar URI default = `qemu:///system` (LP #2027838),
+  sedangkan Boxes memanggil `virsh capabilities` tanpa `-c`; bila `runner`
+  belum punya akses ke socket libvirt system (grup `libvirt` baru / sesi
+  lama), probe gagal dan Boxes membatalkan pembuatan VM. Setup Remote User
+  kini menulis `~/.config/libvirt/libvirt.conf` berisi
+  `uri_default = "qemu:///session"`, dan step Verify mengecek
+  `virsh capabilities` + `gnome-boxes --checks`.
 - **Layar blank GNOME 26 Wayland**: tambah mapping `video.convert` pada
   template PipeWire CRD, watchdog crash dump (auto-restart
   `chrome-remote-desktop@runner`), dan step `Capture desktop proof` + artifact
